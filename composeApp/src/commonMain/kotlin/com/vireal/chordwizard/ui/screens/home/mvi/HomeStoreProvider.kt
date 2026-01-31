@@ -9,10 +9,8 @@ import me.tatarka.inject.annotations.Inject
  */
 @Inject
 class HomeStoreProvider(
-    private val storeFactory: StoreFactory,
-    private val repository: AppRepository
+  private val storeFactory: StoreFactory,
+  private val repository: AppRepository,
 ) {
-    fun create(): HomeStore {
-        return HomeStoreFactory(storeFactory, repository).create()
-    }
+  fun create(): HomeStore = HomeStoreFactory(storeFactory, repository).create()
 }

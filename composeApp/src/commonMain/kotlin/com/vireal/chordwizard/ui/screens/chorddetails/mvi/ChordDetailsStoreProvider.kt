@@ -6,9 +6,7 @@ import me.tatarka.inject.annotations.Inject
 
 @Inject
 class ChordDetailsStoreProvider(
-    private val storeFactory: StoreFactory
+  private val storeFactory: StoreFactory,
 ) {
-    fun create(chordRoot: ChordRoot): ChordDetailsStore {
-        return ChordDetailsStoreFactory(storeFactory, chordRoot).create()
-    }
+  fun create(chordRoot: ChordRoot): ChordDetailsStore = ChordDetailsStoreFactory(storeFactory, chordRoot).create()
 }

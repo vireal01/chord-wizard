@@ -13,66 +13,76 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 internal class ChordDetailsStoreFactory(
-    private val storeFactory: StoreFactory,
-    private val chordRoot: ChordRoot
+  private val storeFactory: StoreFactory,
+  private val chordRoot: ChordRoot,
 ) {
+  fun create(): ChordDetailsStore =
+    object :
+      ChordDetailsStore,
+      Store<Intent, State, Label> by storeFactory.create(
+        name = "ChordDetailsStore",
+        initialState =
+          State(
+            chordRoot = chordRoot,
+          ),
+        executorFactory = ::ExecutorImpl,
+        reducer = ReducerImpl,
+      ) {}
 
-    fun create(): ChordDetailsStore =
-        object : ChordDetailsStore, Store<Intent, State, Label> by storeFactory.create(
-            name = "ChordDetailsStore",
-            initialState = State(
-                chordRoot = chordRoot
-            ),
-            executorFactory = ::ExecutorImpl,
-            reducer = ReducerImpl
-        ) {}
+  private sealed interface Msg {
+    data object ToggleFavorite : Msg
 
-    private sealed interface Msg {
-        data object ToggleFavorite : Msg
-        data object PlayStarted : Msg
-        data object PlayStopped : Msg
-        data class ChordTypeSelected(val chordType: ChordType) : Msg
-    }
+    data object PlayStarted : Msg
 
-    private inner class ExecutorImpl : CoroutineExecutor<Intent, Nothing, State, Msg, Label>() {
-        override fun executeIntent(intent: Intent) {
-            when (intent) {
-                Intent.NavigateBack -> publish(Label.NavigateBack)
+    data object PlayStopped : Msg
 
-                Intent.ToggleFavorite -> {
-                    dispatch(Msg.ToggleFavorite)
-                    val message = if (!state().isFavorite) {
-                        "Added ${state().chordDisplayName} to favorites"
-                    } else {
-                        "Removed ${state().chordDisplayName} from favorites"
-                    }
-                    publish(Label.ShowToast(message))
-                }
+    data class ChordTypeSelected(
+      val chordType: ChordType,
+    ) : Msg
+  }
 
-                Intent.PlayChord -> {
-                    dispatch(Msg.PlayStarted)
-                    scope.launch {
-                        delay(2000)
-                        dispatch(Msg.PlayStopped)
-                    }
-                    publish(Label.ShowToast("Playing ${state().chordDisplayName}"))
-                }
-
-                is Intent.SelectChordType -> {
-                    dispatch(Msg.ChordTypeSelected(intent.chordType))
-                    publish(Label.ShowToast("Selected ${state().chordDisplayName}"))
-                }
-            }
+  private inner class ExecutorImpl : CoroutineExecutor<Intent, Nothing, State, Msg, Label>() {
+    override fun executeIntent(intent: Intent) {
+      when (intent) {
+        Intent.NavigateBack -> {
+          publish(Label.NavigateBack)
         }
-    }
 
-    private object ReducerImpl : Reducer<State, Msg> {
-        override fun State.reduce(msg: Msg): State =
-            when (msg) {
-                Msg.ToggleFavorite -> copy(isFavorite = !isFavorite)
-                Msg.PlayStarted -> copy(isPlaying = true)
-                Msg.PlayStopped -> copy(isPlaying = false)
-                is Msg.ChordTypeSelected -> copy(selectedChordType = msg.chordType)
+        Intent.ToggleFavorite -> {
+          dispatch(Msg.ToggleFavorite)
+          val message =
+            if (!state().isFavorite) {
+              "Added ${state().chordDisplayName} to favorites"
+            } else {
+              "Removed ${state().chordDisplayName} from favorites"
             }
+          publish(Label.ShowToast(message))
+        }
+
+        Intent.PlayChord -> {
+          dispatch(Msg.PlayStarted)
+          scope.launch {
+            delay(2000)
+            dispatch(Msg.PlayStopped)
+          }
+          publish(Label.ShowToast("Playing ${state().chordDisplayName}"))
+        }
+
+        is Intent.SelectChordType -> {
+          dispatch(Msg.ChordTypeSelected(intent.chordType))
+          publish(Label.ShowToast("Selected ${state().chordDisplayName}"))
+        }
+      }
     }
+  }
+
+  private object ReducerImpl : Reducer<State, Msg> {
+    override fun State.reduce(msg: Msg): State =
+      when (msg) {
+        Msg.ToggleFavorite -> copy(isFavorite = !isFavorite)
+        Msg.PlayStarted -> copy(isPlaying = true)
+        Msg.PlayStopped -> copy(isPlaying = false)
+        is Msg.ChordTypeSelected -> copy(selectedChordType = msg.chordType)
+      }
+  }
 }

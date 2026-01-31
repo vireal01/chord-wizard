@@ -9,7 +9,7 @@ import com.vireal.chordwizard.navigation.AppNavGraph
 @Composable
 @Preview
 fun App(appComponent: AppComponent) {
-    MaterialTheme {
-        AppNavGraph(appComponent = appComponent)
-    }
+  MaterialTheme {
+    AppNavGraph(appComponent = appComponent)
+  }
 }

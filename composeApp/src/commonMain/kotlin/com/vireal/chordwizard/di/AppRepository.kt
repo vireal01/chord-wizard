@@ -8,13 +8,9 @@ import me.tatarka.inject.annotations.Inject
  */
 @Inject
 class AppRepository(
-    private val greeting: Greeting
+  private val greeting: Greeting,
 ) {
-    fun getGreeting(): String {
-        return greeting.greet()
-    }
+  fun getGreeting(): String = greeting.greet()
 
-    fun getAppInfo(): String {
-        return "ChordWizard App with kotlin-inject DI"
-    }
+  fun getAppInfo(): String = "ChordWizard App with kotlin-inject DI"
 }

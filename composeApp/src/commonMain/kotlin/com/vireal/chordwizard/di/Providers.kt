@@ -10,11 +10,9 @@ import me.tatarka.inject.annotations.Provides
  * Provides basic application dependencies
  */
 interface AppProvides {
+  @Provides
+  fun provideGreeting(): Greeting = Greeting()
 
-    @Provides
-    fun provideGreeting(): Greeting = Greeting()
-
-    @Provides
-    fun provideStoreFactory(): StoreFactory =
-        LoggingStoreFactory(DefaultStoreFactory())
+  @Provides
+  fun provideStoreFactory(): StoreFactory = LoggingStoreFactory(DefaultStoreFactory())
 }

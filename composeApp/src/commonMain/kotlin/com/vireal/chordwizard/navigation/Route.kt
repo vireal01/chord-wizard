@@ -8,16 +8,17 @@ import kotlinx.serialization.Serializable
  * Using type-safe navigation with serialization
  */
 sealed interface Route {
+  @Serializable
+  data object Home : Route
 
-    @Serializable
-    data object Home : Route
+  @Serializable
+  data object ChordLibrary : Route
 
-    @Serializable
-    data object ChordLibrary : Route
+  @Serializable
+  data class ChordDetails(
+    val chordRoot: ChordRoot,
+  ) : Route
 
-    @Serializable
-    data class ChordDetails(val chordRoot: ChordRoot) : Route
-
-    @Serializable
-    data object Settings : Route
+  @Serializable
+  data object Settings : Route
 }
