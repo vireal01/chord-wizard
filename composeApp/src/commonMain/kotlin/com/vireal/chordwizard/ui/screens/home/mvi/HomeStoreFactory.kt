@@ -8,7 +8,6 @@ import com.vireal.chordwizard.di.AppRepository
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.Intent
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.Label
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.State
-import kotlinx.coroutines.launch
 
 /**
  * Factory to create HomeStore
