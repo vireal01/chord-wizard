@@ -12,7 +12,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.vireal.chordwizard.di.AppComponent
+import com.vireal.chordwizard.domain.builder.ChordBuilder
 import com.vireal.chordwizard.domain.model.ChordRoot
+import com.vireal.chordwizard.ui.components.GuitarChordDiagram
+import com.vireal.chordwizard.ui.components.PianoKeyboard
 import com.vireal.chordwizard.ui.screens.chorddetails.mvi.ChordDetailsStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
@@ -149,17 +152,39 @@ fun ChordDetailsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Placeholder for chord diagram
+            // Piano Keyboard
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Piano",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    PianoKeyboard(
+                        pressedNotes = ChordBuilder.buildChord(state.currentChord),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // Guitar Chord Diagram
+            Card(
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("${state.chordDisplayName} Diagram")
+                    GuitarChordDiagram(
+                        chord = state.currentChord,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 
