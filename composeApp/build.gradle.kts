@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ksp)
 }
 
 kotlin {
@@ -54,6 +56,13 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.androidx.navigation.compose)
+            implementation(libs.kotlin.inject.runtime)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.mvikotlin)
+            implementation(libs.mvikotlin.main)
+            implementation(libs.mvikotlin.logging)
+            implementation(libs.mvikotlin.extensions.coroutines)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -63,6 +72,16 @@ kotlin {
             implementation(libs.kotlinx.coroutinesSwing)
         }
     }
+}
+
+// Configure KSP for all targets
+dependencies {
+    add("kspAndroid", libs.kotlinInjectCompiler)
+    add("kspIosArm64", libs.kotlinInjectCompiler)
+    add("kspIosSimulatorArm64", libs.kotlinInjectCompiler)
+    add("kspJvm", libs.kotlinInjectCompiler)
+    add("kspJs", libs.kotlinInjectCompiler)
+    add("kspWasmJs", libs.kotlinInjectCompiler)
 }
 
 android {
@@ -95,6 +114,7 @@ android {
 dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
+
 
 compose.desktop {
     application {
