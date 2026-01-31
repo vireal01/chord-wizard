@@ -124,9 +124,26 @@ fun ChordDetailsScreen(
                         }
                     }
                     HorizontalDivider()
-                    Text("Notes: C - E - G") // TODO: Calculate based on chord
-                    Text("Difficulty: Beginner") // TODO: Get from data
-                    Text("Finger Position: 1-2-3") // TODO: Get from data
+
+                    // Display calculated notes
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Notes: ",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = state.chordNotes,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Text("Difficulty: ${state.chordDifficulty}")
+                    Text("Finger Position: ${state.fingerPosition}")
                 }
             }
 

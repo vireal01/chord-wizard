@@ -1,6 +1,7 @@
 package com.vireal.chordwizard.ui.screens.chorddetails.mvi
 
 import com.arkivanov.mvikotlin.core.store.Store
+import com.vireal.chordwizard.domain.builder.ChordBuilder
 import com.vireal.chordwizard.domain.model.Chord
 import com.vireal.chordwizard.domain.model.ChordRoot
 import com.vireal.chordwizard.domain.model.ChordType
@@ -36,6 +37,24 @@ interface ChordDetailsStore : Store<Intent, State, Label> {
 
         val chordFullName: String
             get() = currentChord.fullName
+
+        /**
+         * Get chord notes as string (e.g., "C - E - G")
+         */
+        val chordNotes: String
+            get() = ChordBuilder.buildChordString(currentChord)
+
+        /**
+         * Get chord difficulty
+         */
+        val chordDifficulty: String
+            get() = ChordBuilder.getChordDifficulty(currentChord)
+
+        /**
+         * Get finger position
+         */
+        val fingerPosition: String
+            get() = ChordBuilder.getFingerPosition(currentChord)
     }
 
     sealed interface Label {
