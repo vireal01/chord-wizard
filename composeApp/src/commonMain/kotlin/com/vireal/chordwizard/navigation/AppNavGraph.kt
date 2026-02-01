@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.vireal.chordwizard.di.AppComponent
+import com.vireal.chordwizard.domain.model.ChordRoot
 import com.vireal.chordwizard.ui.screens.chorddetails.ChordDetailsScreen
 import com.vireal.chordwizard.ui.screens.chordlibrary.ChordLibraryScreen
 import com.vireal.chordwizard.ui.screens.home.HomeScreen
@@ -40,7 +41,7 @@ fun AppNavGraph(
       ChordLibraryScreen(
         appComponent = appComponent,
         onNavigateToChordDetails = { chordRoot ->
-          navController.navigate(Route.ChordDetails(chordRoot))
+          navController.navigate(Route.ChordDetails(chordRoot.name))
         },
         onNavigateBack = {
           navController.popBackStack()
@@ -50,9 +51,10 @@ fun AppNavGraph(
 
     composable<Route.ChordDetails> { backStackEntry ->
       val args = backStackEntry.toRoute<Route.ChordDetails>()
+      val chordRoot = ChordRoot.valueOf(args.chordRootName)
       ChordDetailsScreen(
         appComponent = appComponent,
-        chordRoot = args.chordRoot,
+        chordRoot = chordRoot,
         onNavigateBack = {
           navController.popBackStack()
         },
