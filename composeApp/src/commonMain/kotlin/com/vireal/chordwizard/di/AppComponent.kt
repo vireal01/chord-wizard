@@ -12,34 +12,33 @@ import me.tatarka.inject.annotations.Component
  */
 @Component
 interface AppComponent : AppProvides {
+  /**
+   * Provides Repository instance
+   */
+  val repository: AppRepository
 
-    /**
-     * Provides Repository instance
-     */
-    val repository: AppRepository
+  /**
+   * Provides ViewModel factory
+   */
+  val viewModel: () -> MainViewModel
 
-    /**
-     * Provides ViewModel factory
-     */
-    val viewModel: () -> MainViewModel
+  /**
+   * Provides HomeStoreProvider for MVI
+   */
+  val homeStoreProvider: HomeStoreProvider
 
-    /**
-     * Provides HomeStoreProvider for MVI
-     */
-    val homeStoreProvider: HomeStoreProvider
+  /**
+   * Provides ChordLibraryStoreProvider for MVI
+   */
+  val chordLibraryStoreProvider: ChordLibraryStoreProvider
 
-    /**
-     * Provides ChordLibraryStoreProvider for MVI
-     */
-    val chordLibraryStoreProvider: ChordLibraryStoreProvider
+  /**
+   * Provides ChordDetailsStoreProvider for MVI
+   */
+  val chordDetailsStoreProvider: ChordDetailsStoreProvider
 
-    /**
-     * Provides ChordDetailsStoreProvider for MVI
-     */
-    val chordDetailsStoreProvider: ChordDetailsStoreProvider
-
-    /**
-     * Provides SettingsStoreProvider for MVI
-     */
-    val settingsStoreProvider: SettingsStoreProvider
+  /**
+   * Provides SettingsStoreProvider for MVI
+   */
+  val settingsStoreProvider: SettingsStoreProvider
 }

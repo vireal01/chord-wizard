@@ -5,9 +5,7 @@ import me.tatarka.inject.annotations.Inject
 
 @Inject
 class SettingsStoreProvider(
-    private val storeFactory: StoreFactory
+  private val storeFactory: StoreFactory,
 ) {
-    fun create(): SettingsStore {
-        return SettingsStoreFactory(storeFactory).create()
-    }
+  fun create(): SettingsStore = SettingsStoreFactory(storeFactory).create()
 }

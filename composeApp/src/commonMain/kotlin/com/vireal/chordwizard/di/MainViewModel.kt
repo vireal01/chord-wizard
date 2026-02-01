@@ -1,8 +1,7 @@
 package com.vireal.chordwizard.di
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import me.tatarka.inject.annotations.Inject
@@ -12,21 +11,16 @@ import me.tatarka.inject.annotations.Inject
  */
 @Inject
 class MainViewModel(
-    private val repository: AppRepository
+  private val repository: AppRepository,
 ) : ViewModel() {
+  var showContent by mutableStateOf(false)
+    private set
 
-    var showContent by mutableStateOf(false)
-        private set
+  fun toggleContent() {
+    showContent = !showContent
+  }
 
-    fun toggleContent() {
-        showContent = !showContent
-    }
+  fun getGreeting(): String = repository.getGreeting()
 
-    fun getGreeting(): String {
-        return repository.getGreeting()
-    }
-
-    fun getAppInfo(): String {
-        return repository.getAppInfo()
-    }
+  fun getAppInfo(): String = repository.getAppInfo()
 }

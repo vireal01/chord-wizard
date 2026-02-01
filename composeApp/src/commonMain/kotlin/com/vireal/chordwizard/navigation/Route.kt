@@ -1,6 +1,5 @@
 package com.vireal.chordwizard.navigation
 
-import com.vireal.chordwizard.domain.model.ChordRoot
 import kotlinx.serialization.Serializable
 
 /**
@@ -8,16 +7,17 @@ import kotlinx.serialization.Serializable
  * Using type-safe navigation with serialization
  */
 sealed interface Route {
+  @Serializable
+  data object Home : Route
 
-    @Serializable
-    data object Home : Route
+  @Serializable
+  data object ChordLibrary : Route
 
-    @Serializable
-    data object ChordLibrary : Route
+  @Serializable
+  data class ChordDetails(
+    val chordRootName: String,
+  ) : Route
 
-    @Serializable
-    data class ChordDetails(val chordRoot: ChordRoot) : Route
-
-    @Serializable
-    data object Settings : Route
+  @Serializable
+  data object Settings : Route
 }

@@ -5,9 +5,7 @@ import me.tatarka.inject.annotations.Inject
 
 @Inject
 class ChordLibraryStoreProvider(
-    private val storeFactory: StoreFactory
+  private val storeFactory: StoreFactory,
 ) {
-    fun create(): ChordLibraryStore {
-        return ChordLibraryStoreFactory(storeFactory).create()
-    }
+  fun create(): ChordLibraryStore = ChordLibraryStoreFactory(storeFactory).create()
 }
