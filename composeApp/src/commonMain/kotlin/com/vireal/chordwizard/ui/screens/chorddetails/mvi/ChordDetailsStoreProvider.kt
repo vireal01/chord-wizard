@@ -2,7 +2,7 @@ package com.vireal.chordwizard.ui.screens.chorddetails.mvi
 
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.vireal.chordwizard.domain.model.ChordRoot
-import me.tatarka.inject.annotations.Inject
+import dev.zacsweers.metro.Inject
 
 @Inject
 class ChordDetailsStoreProvider(

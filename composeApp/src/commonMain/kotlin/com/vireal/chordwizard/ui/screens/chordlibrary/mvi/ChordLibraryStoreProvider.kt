@@ -1,7 +1,7 @@
 package com.vireal.chordwizard.ui.screens.chordlibrary.mvi
 
 import com.arkivanov.mvikotlin.core.store.StoreFactory
-import me.tatarka.inject.annotations.Inject
+import dev.zacsweers.metro.Inject
 
 @Inject
 class ChordLibraryStoreProvider(

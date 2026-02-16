@@ -2,7 +2,7 @@ package com.vireal.chordwizard.ui.screens.home.mvi
 
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.vireal.chordwizard.di.AppRepository
-import me.tatarka.inject.annotations.Inject
+import dev.zacsweers.metro.Inject
 
 /**
  * Factory to create HomeStore with DI

@@ -1,7 +1,7 @@
 package com.vireal.chordwizard.di
 
 import com.vireal.chordwizard.Greeting
-import me.tatarka.inject.annotations.Inject
+import dev.zacsweers.metro.Inject
 
 /**
  * Example repository demonstrating dependency injection
@@ -12,5 +12,5 @@ class AppRepository(
 ) {
   fun getGreeting(): String = greeting.greet()
 
-  fun getAppInfo(): String = "ChordWizard App with kotlin-inject DI"
+  fun getAppInfo(): String = "ChordWizard App with Metro DI"
 }
