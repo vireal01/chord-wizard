@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 fun ChordWizardTheme(
+    @Suppress("UNUSED_PARAMETER")
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
