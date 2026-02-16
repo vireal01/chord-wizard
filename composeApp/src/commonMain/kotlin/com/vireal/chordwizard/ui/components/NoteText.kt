@@ -37,10 +37,7 @@ fun ChordNotesText(
 ) {
   Text(
     text = notes,
-    style =
-      MonospaceTextStyle.copy(
-        fontFamily = FontFamily.Monospace,
-      ),
+    style = MonospaceTextStyle,
     color = MaterialTheme.colorScheme.primary,
     modifier = modifier,
   )
