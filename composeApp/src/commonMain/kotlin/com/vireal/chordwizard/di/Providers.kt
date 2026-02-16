@@ -4,7 +4,7 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.logging.store.LoggingStoreFactory
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import com.vireal.chordwizard.Greeting
-import me.tatarka.inject.annotations.Provides
+import dev.zacsweers.metro.Provides
 
 /**
  * Provides basic application dependencies

@@ -4,41 +4,36 @@ import com.vireal.chordwizard.ui.screens.chorddetails.mvi.ChordDetailsStoreProvi
 import com.vireal.chordwizard.ui.screens.chordlibrary.mvi.ChordLibraryStoreProvider
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStoreProvider
 import com.vireal.chordwizard.ui.screens.settings.mvi.SettingsStoreProvider
-import me.tatarka.inject.annotations.Component
+import dev.zacsweers.metro.DependencyGraph
 
 /**
  * Main application DI component
  * Manages all application-level dependencies
  */
-@Component
-interface AppComponent : AppProvides {
+@DependencyGraph
+abstract class AppComponent : AppProvides {
   /**
    * Provides Repository instance
    */
-  val repository: AppRepository
-
-  /**
-   * Provides ViewModel factory
-   */
-  val viewModel: () -> MainViewModel
+  abstract val repository: AppRepository
 
   /**
    * Provides HomeStoreProvider for MVI
    */
-  val homeStoreProvider: HomeStoreProvider
+  abstract val homeStoreProvider: HomeStoreProvider
 
   /**
    * Provides ChordLibraryStoreProvider for MVI
    */
-  val chordLibraryStoreProvider: ChordLibraryStoreProvider
+  abstract val chordLibraryStoreProvider: ChordLibraryStoreProvider
 
   /**
    * Provides ChordDetailsStoreProvider for MVI
    */
-  val chordDetailsStoreProvider: ChordDetailsStoreProvider
+  abstract val chordDetailsStoreProvider: ChordDetailsStoreProvider
 
   /**
    * Provides SettingsStoreProvider for MVI
    */
-  val settingsStoreProvider: SettingsStoreProvider
+  abstract val settingsStoreProvider: SettingsStoreProvider
 }

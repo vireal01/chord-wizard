@@ -27,9 +27,10 @@ fun PianoKeyboard(
 ) {
   if (pressedNotes.isEmpty()) return
 
-  val whiteKeyColor = MaterialTheme.colorScheme.surface
-  val blackKeyColor = MaterialTheme.colorScheme.onSurface
-  val pressedColor = MaterialTheme.colorScheme.primary
+  // Use pure white/black for piano keys as per design
+  val whiteKeyColor = Color.White // Pure white keys
+  val blackKeyColor = Color.Black // Pure black keys
+  val pressedColor = MaterialTheme.colorScheme.primary // Vibrant blue for pressed
   val borderColor = MaterialTheme.colorScheme.outline
 
   // Calculate range: from lowest to highest note
