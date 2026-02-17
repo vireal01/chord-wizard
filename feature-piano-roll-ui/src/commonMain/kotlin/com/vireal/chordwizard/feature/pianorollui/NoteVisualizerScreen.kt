@@ -98,7 +98,7 @@ fun NoteVisualizerScreen(
   Scaffold(
     topBar = {
       TopAppBar(
-        title = { Text("Node Visualizer") },
+        title = { Text("Note Visualizer") },
         navigationIcon = {
           IconButton(onClick = onNavigateBack) {
             Text("←")
