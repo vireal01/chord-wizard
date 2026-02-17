@@ -18,8 +18,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.vireal.chordwizard.midi.core.MidiConnectionState
@@ -34,7 +36,7 @@ fun NoteVisualizerScreen(
   onNavigateBack: () -> Unit,
   modifier: Modifier = Modifier,
   targetNotes: Set<Int> = emptySet(),
-  visibleRange: IntRange = 36..96,
+  visibleRange: IntRange = DEFAULT_NOTE_VISUALIZER_RANGE,
   colors: PianoKeyboardColors = pianoKeyboardColors(),
 ) {
   val screenScope = rememberCoroutineScope()
@@ -45,6 +47,15 @@ fun NoteVisualizerScreen(
     midiInputService.connectionState
       .map { state -> (state as? MidiConnectionState.Connected)?.device?.name ?: "No device connected" }
       .collectAsState(initial = "No device connected")
+  var viewportState by
+    remember(visibleRange) {
+      mutableStateOf(
+        pianoViewportStateForRange(
+          visibleRange = visibleRange,
+          allowedOctaves = DEFAULT_ALLOWED_OCTAVES,
+        ),
+      )
+    }
 
   LaunchedEffect(midiInputService) {
     midiInputService.refreshAvailability()
@@ -104,10 +115,12 @@ fun NoteVisualizerScreen(
 
       Spacer(modifier = Modifier.height(8.dp))
 
-      PianoKeyboardView(
+      PianoRollView(
+        viewportState = viewportState,
         pressedKeys = pressedKeys,
         targetNotes = targetNotes,
-        visibleRange = visibleRange,
+        showOctaveShifter = true,
+        onViewportAction = { action -> viewportState = reducePianoViewportState(viewportState, action) },
         colors = colors,
         modifier = Modifier.fillMaxWidth(),
       )
