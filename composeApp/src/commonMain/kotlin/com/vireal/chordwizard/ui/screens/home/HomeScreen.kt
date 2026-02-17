@@ -97,7 +97,7 @@ fun HomeScreen(
         onClick = { store.accept(HomeStore.Intent.NavigateToNoteVisualizer) },
         modifier = Modifier.fillMaxWidth(),
       ) {
-        Text("Node Visualizer")
+        Text("Note Visualizer")
       }
 
       Spacer(modifier = Modifier.height(24.dp))
