@@ -33,3 +33,6 @@ plugins {
 }
 
 include(":composeApp")
+include(":bluetooth-midi")
+include(":midi-core")
+include(":midi-transport-usb")

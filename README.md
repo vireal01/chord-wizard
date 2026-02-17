@@ -74,3 +74,62 @@ Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-mu
 
 We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
 If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).
+
+## MIDI Roadmap / TODO
+
+Current status:
+- [x] Android USB MIDI transport works.
+- [x] Notes from connected MIDI device are displayed on Home screen.
+
+### Cross-platform MIDI support
+
+Android:
+- [x] USB MIDI transport (`midi-transport-usb`) with note events.
+- [ ] Add robust reconnect flow for USB device detach/attach.
+- [ ] Add user-facing error UI (not only logs/toasts) for connect/scan failures.
+
+iOS:
+- [ ] Implement iOS transport module (CoreMIDI) with device discovery.
+- [ ] Add connect/disconnect flow and stream incoming MIDI messages.
+- [ ] Convert incoming MIDI messages to shared `NoteEvent` format.
+- [ ] Integrate transport into DI as `MidiInputService` for iOS target.
+- [ ] Add iOS permissions and runtime handling (Bluetooth/USB where needed).
+
+Web (JS/Wasm):
+- [ ] Implement Web transport using Web MIDI API (`navigator.requestMIDIAccess`).
+- [ ] Add device selection and input subscription in browser.
+- [ ] Map Web MIDI messages to shared `NoteEvent`.
+- [ ] Add browser capability detection and unsupported-state UX.
+- [ ] Define HTTPS/secure-context requirements in docs.
+
+Desktop (JVM):
+- [ ] Implement Desktop transport via Java MIDI API (`javax.sound.midi`) or selected library.
+- [ ] Add input device discovery and connection management.
+- [ ] Map incoming messages to shared `NoteEvent`.
+- [ ] Add fallback/unsupported behavior per OS if required.
+
+Architecture/cleanup:
+- [ ] Finish migration of `bluetooth-midi` to `midi-core` contracts (remove remaining duplicated service/error contracts).
+- [ ] Add transport selector (`USB` / `Bluetooth` / `Auto`) in Settings.
+- [ ] Add integration tests for parser + note-state reducer (`midi-core`).
+
+### Piano Roll screen (visual note rendering)
+
+Functional tasks:
+- [ ] Add new screen route `PianoRoll`.
+- [ ] Stream live `NoteEvent` data into dedicated store/viewmodel.
+- [ ] Keep active notes state (currently pressed notes).
+- [ ] Keep short event history for falling notes/timeline visualization.
+
+UI tasks:
+- [ ] Draw keyboard lanes (12 semitones repeated by octave).
+- [ ] Highlight currently pressed keys in real time.
+- [ ] Render note blocks on a scrolling timeline (piano-roll style).
+- [ ] Add velocity-based color/intensity for note blocks.
+- [ ] Add device/channel filters and legend in UI.
+
+Performance/UX tasks:
+- [ ] Throttle/reduce recompositions for high-frequency MIDI streams.
+- [ ] Use canvas-based rendering for smooth animation.
+- [ ] Add frame-time profiling and optimize for low-end devices.
+- [ ] Add pause/clear/history controls for debugging sessions.

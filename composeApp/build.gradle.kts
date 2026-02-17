@@ -49,6 +49,9 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
+            implementation(projects.bluetoothMidi)
+            implementation(projects.midiCore)
+            implementation(projects.midiTransportUsb)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

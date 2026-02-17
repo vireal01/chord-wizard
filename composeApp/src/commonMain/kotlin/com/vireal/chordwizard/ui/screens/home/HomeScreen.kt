@@ -89,6 +89,28 @@ fun HomeScreen(
         Text("Open Chord Library")
       }
 
+      Spacer(modifier = Modifier.height(24.dp))
+      Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+          Text(
+            text = "Live MIDI Notes",
+            style = MaterialTheme.typography.titleMedium,
+          )
+          Spacer(modifier = Modifier.height(8.dp))
+          if (state.activeMidiNotes.isEmpty()) {
+            Text(
+              text = "No active notes",
+              style = MaterialTheme.typography.bodyMedium,
+            )
+          } else {
+            Text(
+              text = state.activeMidiNotes.joinToString { "${it.noteName}(ch${it.channel + 1})" },
+              style = MaterialTheme.typography.bodyMedium,
+            )
+          }
+        }
+      }
+
       if (state.showContent) {
         Spacer(modifier = Modifier.height(24.dp))
         Card(
