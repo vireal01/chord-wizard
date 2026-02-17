@@ -54,35 +54,10 @@ fun NoteVisualizerScreen(
   LaunchedEffect(midiInputService) {
     midiInputService.discoveredDevices.collect { devices ->
       if (devices.isEmpty()) return@collect
-      val firstDeviceId = devices.first().id
-      when (val connection = midiInputService.connectionState.value) {
-        MidiConnectionState.Disconnected -> {
-          midiInputService.connect(firstDeviceId)
-        }
-
-        is MidiConnectionState.Failed -> {
-          midiInputService.connect(firstDeviceId)
-        }
-
-        is MidiConnectionState.Connecting -> {
-          if (connection.target.id !=
-            firstDeviceId
-          ) {
-            midiInputService.connect(firstDeviceId)
-          }
-        }
-
-        is MidiConnectionState.Connected -> {
-          if (connection.device.id !=
-            firstDeviceId
-          ) {
-            midiInputService.connect(firstDeviceId)
-          }
-        }
-
-        is MidiConnectionState.Disconnecting -> {
-          Unit
-        }
+      when (midiInputService.connectionState.value) {
+        MidiConnectionState.Disconnected -> midiInputService.connect(devices.first().id)
+        is MidiConnectionState.Failed -> midiInputService.connect(devices.first().id)
+        else -> Unit
       }
     }
   }
