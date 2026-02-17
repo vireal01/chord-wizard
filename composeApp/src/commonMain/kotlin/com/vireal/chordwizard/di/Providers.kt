@@ -21,8 +21,13 @@ interface AppProvides {
   fun provideStoreFactory(): StoreFactory = LoggingStoreFactory(DefaultStoreFactory())
 
   @Provides
-  fun provideBluetoothMidiService(): BluetoothMidiService = createBluetoothMidiService()
+  fun provideBluetoothMidiService(): BluetoothMidiService = SharedServices.bluetoothMidiService
 
   @Provides
-  fun provideMidiInputService(): MidiInputService = createUsbMidiInputService()
+  fun provideMidiInputService(): MidiInputService = SharedServices.usbMidiInputService
+}
+
+private object SharedServices {
+  val bluetoothMidiService: BluetoothMidiService by lazy { createBluetoothMidiService() }
+  val usbMidiInputService: MidiInputService by lazy { createUsbMidiInputService() }
 }

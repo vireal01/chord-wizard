@@ -11,7 +11,6 @@ import com.vireal.chordwizard.midi.core.MidiInputService
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.Intent
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.Label
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.State
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 /**
@@ -94,6 +93,7 @@ internal class HomeStoreFactory(
         Intent.ToggleContent -> dispatch(Msg.ToggleContent)
         Intent.NavigateToChordLibrary -> publish(Label.NavigateToChordLibrary)
         Intent.NavigateToSettings -> publish(Label.NavigateToSettings)
+        Intent.NavigateToNoteVisualizer -> publish(Label.NavigateToNoteVisualizer)
       }
     }
   }

@@ -46,6 +46,7 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
 
   private val discoveredById = linkedMapOf<String, com.vireal.chordwizard.midi.core.MidiDevice>()
   private var callbackRegistered = false
+  private var scanSubscribers = 0
   private var currentDevice: MidiDevice? = null
   private var currentOutputPort: MidiOutputPort? = null
   private var currentConnectedRef: MidiDeviceRef? = null
@@ -142,15 +143,33 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
         return
       }
 
+      scanSubscribers += 1
+      if (scanSubscribers > 1) {
+        return
+      }
+
       discoveredById.clear()
       refreshUsbDevices()
-      registerDeviceCallbackIfNeeded()
+      val callbackReady = registerDeviceCallbackIfNeeded()
+      if (!callbackReady) {
+        scanSubscribers = 0
+        return
+      }
       _scanState.value = MidiScanState.Scanning(startedAtEpochMillis = System.currentTimeMillis())
     }
   }
 
   override suspend fun stopScan() {
     stateMutex.withLock {
+      if (scanSubscribers > 0) {
+        scanSubscribers -= 1
+      }
+
+      if (scanSubscribers > 0) {
+        return
+      }
+
+      unregisterDeviceCallbackIfNeeded()
       _scanState.value =
         MidiScanState.Stopped(
           stoppedAtEpochMillis = System.currentTimeMillis(),
@@ -248,12 +267,39 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
       .forEach(::upsertDevice)
   }
 
-  private fun registerDeviceCallbackIfNeeded() {
+  private fun registerDeviceCallbackIfNeeded(): Boolean {
     if (callbackRegistered) {
+      return true
+    }
+    try {
+      midiManager.registerDeviceCallback(deviceCallback, mainHandler)
+      callbackRegistered = true
+      return true
+    } catch (t: Throwable) {
+      val error =
+        MidiError.ScanFailed(
+          message = "Failed to register USB MIDI device callback: ${t.message ?: "unknown error"}",
+        )
+      _scanState.value = MidiScanState.Failed(error)
+      _errors.tryEmit(error)
+      return false
+    }
+  }
+
+  private fun unregisterDeviceCallbackIfNeeded() {
+    if (!callbackRegistered) {
       return
     }
-    midiManager.registerDeviceCallback(deviceCallback, mainHandler)
-    callbackRegistered = true
+    try {
+      midiManager.unregisterDeviceCallback(deviceCallback)
+      callbackRegistered = false
+    } catch (t: Throwable) {
+      val error =
+        MidiError.ScanFailed(
+          message = "Failed to unregister USB MIDI device callback: ${t.message ?: "unknown error"}",
+        )
+      _errors.tryEmit(error)
+    }
   }
 
   private fun upsertDevice(device: com.vireal.chordwizard.midi.core.MidiDevice) {

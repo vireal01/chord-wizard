@@ -8,10 +8,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.vireal.chordwizard.di.AppComponent
 import com.vireal.chordwizard.domain.model.ChordRoot
+import com.vireal.chordwizard.feature.pianorollui.NoteVisualizerScreen
+import com.vireal.chordwizard.feature.pianorollui.pianoKeyboardColors
 import com.vireal.chordwizard.ui.screens.chorddetails.ChordDetailsScreen
 import com.vireal.chordwizard.ui.screens.chordlibrary.ChordLibraryScreen
 import com.vireal.chordwizard.ui.screens.home.HomeScreen
 import com.vireal.chordwizard.ui.screens.settings.SettingsScreen
+import com.vireal.chordwizard.ui.theme.CorrectNote
+import com.vireal.chordwizard.ui.theme.ErrorNote
 
 /**
  * Main navigation graph for the application
@@ -33,6 +37,9 @@ fun AppNavGraph(
         },
         onNavigateToSettings = {
           navController.navigate(Route.Settings)
+        },
+        onNavigateToNoteVisualizer = {
+          navController.navigate(Route.NoteVisualizer)
         },
       )
     }
@@ -67,6 +74,20 @@ fun AppNavGraph(
         onNavigateBack = {
           navController.popBackStack()
         },
+      )
+    }
+
+    composable<Route.NoteVisualizer> {
+      NoteVisualizerScreen(
+        midiInputService = appComponent.midiInputService,
+        onNavigateBack = {
+          navController.popBackStack()
+        },
+        colors =
+          pianoKeyboardColors(
+            targetGlow = CorrectNote,
+            wrongGlow = ErrorNote,
+          ),
       )
     }
   }
