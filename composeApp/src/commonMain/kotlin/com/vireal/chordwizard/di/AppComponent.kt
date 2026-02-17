@@ -1,5 +1,7 @@
 package com.vireal.chordwizard.di
 
+import com.vireal.chordwizard.bluetoothmidi.BluetoothMidiService
+import com.vireal.chordwizard.midi.core.MidiInputService
 import com.vireal.chordwizard.ui.screens.chorddetails.mvi.ChordDetailsStoreProvider
 import com.vireal.chordwizard.ui.screens.chordlibrary.mvi.ChordLibraryStoreProvider
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStoreProvider
@@ -16,6 +18,16 @@ abstract class AppComponent : AppProvides {
    * Provides Repository instance
    */
   abstract val repository: AppRepository
+
+  /**
+   * Provides Bluetooth MIDI service.
+   */
+  abstract val bluetoothMidiService: BluetoothMidiService
+
+  /**
+   * Provides selected MIDI input service (USB by default).
+   */
+  abstract val midiInputService: MidiInputService
 
   /**
    * Provides HomeStoreProvider for MVI

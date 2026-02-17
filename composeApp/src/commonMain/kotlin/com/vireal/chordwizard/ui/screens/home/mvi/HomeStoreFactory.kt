@@ -1,13 +1,18 @@
 package com.vireal.chordwizard.ui.screens.home.mvi
 
 import com.arkivanov.mvikotlin.core.store.Reducer
+import com.arkivanov.mvikotlin.core.store.SimpleBootstrapper
 import com.arkivanov.mvikotlin.core.store.Store
 import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.extensions.coroutines.CoroutineExecutor
 import com.vireal.chordwizard.di.AppRepository
+import com.vireal.chordwizard.midi.core.MidiConnectionState
+import com.vireal.chordwizard.midi.core.MidiInputService
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.Intent
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.Label
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.State
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 /**
  * Factory to create HomeStore
@@ -15,6 +20,8 @@ import com.vireal.chordwizard.ui.screens.home.mvi.HomeStore.State
 internal class HomeStoreFactory(
   private val storeFactory: StoreFactory,
   private val repository: AppRepository,
+  private val midiInputService: MidiInputService,
+  private val observeActiveMidiNotesUseCase: ObserveActiveMidiNotesUseCase,
 ) {
   fun create(): HomeStore =
     object :
@@ -26,18 +33,62 @@ internal class HomeStoreFactory(
             greeting = repository.getGreeting(),
             appInfo = repository.getAppInfo(),
           ),
+        bootstrapper = SimpleBootstrapper(Action.InitializeMidi, Action.ObserveMidiNotes),
         executorFactory = ::ExecutorImpl,
         reducer = ReducerImpl,
       ) {}
+
+  private sealed interface Action {
+    data object InitializeMidi : Action
+
+    data object ObserveMidiNotes : Action
+  }
 
   /**
    * Executor - handles intents and produces messages/labels
    */
   private sealed interface Msg {
     data object ToggleContent : Msg
+
+    data class ActiveMidiNotesChanged(
+      val notes: List<ActiveMidiNote>,
+    ) : Msg
   }
 
-  private inner class ExecutorImpl : CoroutineExecutor<Intent, Nothing, State, Msg, Label>() {
+  private inner class ExecutorImpl : CoroutineExecutor<Intent, Action, State, Msg, Label>() {
+    override fun executeAction(action: Action) {
+      when (action) {
+        Action.InitializeMidi -> {
+          scope.launch {
+            midiInputService.refreshAvailability()
+            midiInputService.startScan()
+          }
+
+          scope.launch {
+            midiInputService.discoveredDevices.collect { devices ->
+              if (devices.isEmpty()) {
+                return@collect
+              }
+
+              when (midiInputService.connectionState.value) {
+                MidiConnectionState.Disconnected -> midiInputService.connect(devices.first().id)
+                is MidiConnectionState.Failed -> midiInputService.connect(devices.first().id)
+                else -> Unit
+              }
+            }
+          }
+        }
+
+        Action.ObserveMidiNotes -> {
+          scope.launch {
+            observeActiveMidiNotesUseCase.execute().collect { notes ->
+              dispatch(Msg.ActiveMidiNotesChanged(notes))
+            }
+          }
+        }
+      }
+    }
+
     override fun executeIntent(intent: Intent) {
       when (intent) {
         Intent.ToggleContent -> dispatch(Msg.ToggleContent)
@@ -54,6 +105,7 @@ internal class HomeStoreFactory(
     override fun State.reduce(msg: Msg): State =
       when (msg) {
         Msg.ToggleContent -> copy(showContent = !showContent)
+        is Msg.ActiveMidiNotesChanged -> copy(activeMidiNotes = msg.notes)
       }
   }
 }

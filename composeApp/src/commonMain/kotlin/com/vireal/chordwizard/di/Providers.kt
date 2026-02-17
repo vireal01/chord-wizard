@@ -4,6 +4,10 @@ import com.arkivanov.mvikotlin.core.store.StoreFactory
 import com.arkivanov.mvikotlin.logging.store.LoggingStoreFactory
 import com.arkivanov.mvikotlin.main.store.DefaultStoreFactory
 import com.vireal.chordwizard.Greeting
+import com.vireal.chordwizard.bluetoothmidi.BluetoothMidiService
+import com.vireal.chordwizard.bluetoothmidi.createBluetoothMidiService
+import com.vireal.chordwizard.midi.core.MidiInputService
+import com.vireal.chordwizard.midi.usb.createUsbMidiInputService
 import dev.zacsweers.metro.Provides
 
 /**
@@ -15,4 +19,10 @@ interface AppProvides {
 
   @Provides
   fun provideStoreFactory(): StoreFactory = LoggingStoreFactory(DefaultStoreFactory())
+
+  @Provides
+  fun provideBluetoothMidiService(): BluetoothMidiService = createBluetoothMidiService()
+
+  @Provides
+  fun provideMidiInputService(): MidiInputService = createUsbMidiInputService()
 }

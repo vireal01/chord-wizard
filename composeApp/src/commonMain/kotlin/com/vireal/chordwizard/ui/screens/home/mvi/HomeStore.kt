@@ -29,6 +29,7 @@ interface HomeStore : Store<Intent, State, Label> {
     val appInfo: String = "",
     val showContent: Boolean = false,
     val isLoading: Boolean = false,
+    val activeMidiNotes: List<ActiveMidiNote> = emptyList(),
   )
 
   /**
