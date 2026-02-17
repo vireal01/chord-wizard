@@ -117,7 +117,7 @@ Architecture/cleanup:
 
 Functional tasks:
 - [x] Create separate KMP feature module `feature-piano-roll-ui`.
-- [x] Add new screen route (`Node Visualizer`) and navigation from Home screen.
+- [x] Add new screen route (`Note Visualizer`) and navigation from Home screen.
 - [x] Add basic live keyboard rendering from `MidiInputService.noteEvents`.
 - [x] Keep active notes state (currently pressed notes).
 - [ ] Keep short event history for falling notes/timeline visualization.
