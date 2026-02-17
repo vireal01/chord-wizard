@@ -50,6 +50,7 @@ kotlin {
         }
         commonMain.dependencies {
             implementation(projects.bluetoothMidi)
+            implementation(projects.featurePianoRollUi)
             implementation(projects.midiCore)
             implementation(projects.midiTransportUsb)
             implementation(libs.compose.runtime)

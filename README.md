@@ -116,14 +116,21 @@ Architecture/cleanup:
 ### Piano Roll screen (visual note rendering)
 
 Functional tasks:
-- [ ] Add new screen route `PianoRoll`.
-- [ ] Stream live `NoteEvent` data into dedicated store/viewmodel.
-- [ ] Keep active notes state (currently pressed notes).
+- [x] Create separate KMP feature module `feature-piano-roll-ui`.
+- [x] Add new screen route (`Note Visualizer`) and navigation from Home screen.
+- [x] Add basic live keyboard rendering from `MidiInputService.noteEvents`.
+- [x] Keep active notes state (currently pressed notes).
 - [ ] Keep short event history for falling notes/timeline visualization.
 
 UI tasks:
-- [ ] Draw keyboard lanes (12 semitones repeated by octave).
-- [ ] Highlight currently pressed keys in real time.
+- [x] Draw keyboard lanes (12 semitones repeated by octave).
+- [x] Highlight currently pressed keys in real time.
+- [ ] Add finalized visual state/color for correct pressed key.
+- [ ] Add finalized visual state/color for wrong pressed key.
+- [ ] Add finalized visual state/color for target key (must press).
+- [ ] Set default visible keyboard range to exactly `F3..E5` (2 octaves).
+- [ ] Add left arrow control under keyboard (shift visible range by 1 octave left).
+- [ ] Add right arrow control under keyboard (shift visible range by 1 octave right).
 - [ ] Render note blocks on a scrolling timeline (piano-roll style).
 - [ ] Add velocity-based color/intensity for note blocks.
 - [ ] Add device/channel filters and legend in UI.

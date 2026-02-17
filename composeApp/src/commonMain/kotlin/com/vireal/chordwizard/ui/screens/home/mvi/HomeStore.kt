@@ -19,6 +19,8 @@ interface HomeStore : Store<Intent, State, Label> {
     data object NavigateToChordLibrary : Intent
 
     data object NavigateToSettings : Intent
+
+    data object NavigateToNoteVisualizer : Intent
   }
 
   /**
@@ -39,5 +41,7 @@ interface HomeStore : Store<Intent, State, Label> {
     data object NavigateToChordLibrary : Label
 
     data object NavigateToSettings : Label
+
+    data object NavigateToNoteVisualizer : Label
   }
 }

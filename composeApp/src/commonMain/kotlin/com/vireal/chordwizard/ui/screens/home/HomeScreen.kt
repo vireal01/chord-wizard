@@ -19,6 +19,7 @@ fun HomeScreen(
   appComponent: AppComponent,
   onNavigateToChordLibrary: () -> Unit,
   onNavigateToSettings: () -> Unit,
+  onNavigateToNoteVisualizer: () -> Unit,
 ) {
   // Create store using DI
   val store = remember { appComponent.homeStoreProvider.create() }
@@ -32,6 +33,7 @@ fun HomeScreen(
       when (label) {
         HomeStore.Label.NavigateToChordLibrary -> onNavigateToChordLibrary()
         HomeStore.Label.NavigateToSettings -> onNavigateToSettings()
+        HomeStore.Label.NavigateToNoteVisualizer -> onNavigateToNoteVisualizer()
       }
     }
   }
@@ -87,6 +89,15 @@ fun HomeScreen(
         modifier = Modifier.fillMaxWidth(),
       ) {
         Text("Open Chord Library")
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
+
+      Button(
+        onClick = { store.accept(HomeStore.Intent.NavigateToNoteVisualizer) },
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Text("Note Visualizer")
       }
 
       Spacer(modifier = Modifier.height(24.dp))
