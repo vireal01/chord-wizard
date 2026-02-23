@@ -36,6 +36,7 @@ import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
 import com.vireal.chordwizard.di.AppComponent
 import com.vireal.chordwizard.domain.builder.ChordBuilder
 import com.vireal.chordwizard.domain.model.ChordRoot
+import com.vireal.chordwizard.domain.model.NoteWithOctave
 import com.vireal.chordwizard.ui.components.GuitarChordDiagram
 import com.vireal.chordwizard.ui.components.PianoKeyboard
 import com.vireal.chordwizard.ui.screens.chorddetails.mvi.ChordDetailsStore
@@ -185,8 +186,10 @@ fun ChordDetailsScreen(
             text = "Piano",
             style = MaterialTheme.typography.titleMedium,
           )
+          val chordNotes = ChordBuilder.buildChordWithOctaves(state.currentChord)
           PianoKeyboard(
-            pressedNotes = ChordBuilder.buildChordWithOctaves(state.currentChord),
+            pressedNotes = emptyList(),
+            targetSequence = chordNotes.map(NoteWithOctave::toMidi),
             modifier = Modifier.fillMaxWidth(),
           )
         }
@@ -233,3 +236,5 @@ fun ChordDetailsScreen(
     }
   }
 }
+
+private fun NoteWithOctave.toMidi(): Int = absolutePosition + 12

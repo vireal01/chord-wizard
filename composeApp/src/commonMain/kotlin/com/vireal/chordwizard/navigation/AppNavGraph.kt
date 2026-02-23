@@ -16,6 +16,7 @@ import com.vireal.chordwizard.ui.screens.home.HomeScreen
 import com.vireal.chordwizard.ui.screens.settings.SettingsScreen
 import com.vireal.chordwizard.ui.theme.CorrectNote
 import com.vireal.chordwizard.ui.theme.ErrorNote
+import com.vireal.chordwizard.ui.theme.TargetNoteDot
 
 /**
  * Main navigation graph for the application
@@ -85,7 +86,8 @@ fun AppNavGraph(
         },
         colors =
           pianoKeyboardColors(
-            targetGlow = CorrectNote,
+            targetDot = TargetNoteDot,
+            correctGlow = CorrectNote,
             wrongGlow = ErrorNote,
           ),
       )

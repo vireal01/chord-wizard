@@ -14,7 +14,8 @@ import androidx.compose.ui.unit.dp
 fun PianoRollView(
   viewportState: PianoViewportState,
   pressedKeys: List<PressedKeyUi>,
-  targetNotes: Set<Int>,
+  trainingSpec: PianoTrainingSpec? = null,
+  trainingProgress: PianoTrainingProgress? = null,
   modifier: Modifier = Modifier,
   showOctaveShifter: Boolean = false,
   onViewportAction: (PianoViewportAction) -> Unit = {},
@@ -26,7 +27,8 @@ fun PianoRollView(
   ) {
     PianoKeyboardView(
       pressedKeys = pressedKeys,
-      targetNotes = targetNotes,
+      trainingSpec = trainingSpec,
+      trainingProgress = trainingProgress,
       visibleRange = viewportState.visibleRange,
       colors = colors,
       modifier = Modifier.fillMaxWidth(),
