@@ -29,9 +29,36 @@ data class PianoViewportUi(
   val scrollOffset: Float,
 )
 
+sealed interface PianoValidationMode {
+  data object StrictSequence : PianoValidationMode
+}
+
+data class PianoTrainingSpec(
+  val targetSequence: List<Int>,
+  val validationMode: PianoValidationMode = PianoValidationMode.StrictSequence,
+)
+
+data class PianoTrainingProgress(
+  val nextExpectedIndex: Int,
+  val completedStepIndices: Set<Int>,
+  val wrongActiveNotes: Set<Int>,
+  val isCompleted: Boolean,
+) {
+  companion object {
+    val Empty =
+      PianoTrainingProgress(
+        nextExpectedIndex = 0,
+        completedStepIndices = emptySet(),
+        wrongActiveNotes = emptySet(),
+        isCompleted = false,
+      )
+  }
+}
+
 enum class PianoKeyVisualState {
   Idle,
   Pressed,
-  Target,
+  TargetDot,
+  CorrectPressed,
   WrongPressed,
 }

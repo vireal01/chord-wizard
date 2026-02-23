@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
@@ -19,8 +21,10 @@ data class PianoKeyboardColors(
   val blackKey: Color,
   val border: Color,
   val pressedKey: Color,
-  val targetGlow: Color,
+  val targetDot: Color,
+  val correctGlow: Color,
   val wrongGlow: Color,
+  val wrongMark: Color,
 )
 
 @Composable
@@ -29,45 +33,33 @@ fun pianoKeyboardColors(
   blackKey: Color = Color.Black,
   border: Color = MaterialTheme.colorScheme.outline,
   pressedKey: Color = MaterialTheme.colorScheme.primary,
-  targetGlow: Color = MaterialTheme.colorScheme.tertiary,
+  targetDot: Color = Color(0xFF66FF9A),
+  correctGlow: Color = MaterialTheme.colorScheme.tertiary,
   wrongGlow: Color = MaterialTheme.colorScheme.error,
+  wrongMark: Color = Color.White,
 ): PianoKeyboardColors =
   PianoKeyboardColors(
     whiteKey = whiteKey,
     blackKey = blackKey,
     border = border,
     pressedKey = pressedKey,
-    targetGlow = targetGlow,
+    targetDot = targetDot,
+    correctGlow = correctGlow,
     wrongGlow = wrongGlow,
+    wrongMark = wrongMark,
   )
 
 @Composable
 fun PianoKeyboardView(
   pressedKeys: List<PressedKeyUi>,
-  targetNotes: Set<Int>,
+  trainingSpec: PianoTrainingSpec? = null,
+  trainingProgress: PianoTrainingProgress? = null,
   modifier: Modifier = Modifier,
   visibleRange: IntRange = 36..96,
   colors: PianoKeyboardColors = pianoKeyboardColors(),
 ) {
-  val noteStateByMidi =
-    buildMap<Int, PianoKeyVisualState> {
-      val pressedByNote = pressedKeys.associateBy { it.note }
-      for (note in visibleRange) {
-        val isTarget = note in targetNotes
-        val isPressed = pressedByNote.containsKey(note)
-        val isWrongPressed = isPressed && targetNotes.isNotEmpty() && !isTarget
-
-        val state =
-          when {
-            isWrongPressed -> PianoKeyVisualState.WrongPressed
-            isPressed -> PianoKeyVisualState.Pressed
-            isTarget -> PianoKeyVisualState.Target
-            else -> PianoKeyVisualState.Idle
-          }
-
-        put(note, state)
-      }
-    }
+  val noteStateByMidi = buildNoteStateByMidi(visibleRange, pressedKeys, trainingSpec, trainingProgress)
+  val targetNotes = trainingSpec?.targetSequence?.toSet().orEmpty()
 
   val whiteNotes = visibleRange.filter(::isWhiteKey)
   if (whiteNotes.isEmpty()) return
@@ -93,6 +85,7 @@ fun PianoKeyboardView(
         x = x,
         width = whiteKeyWidth,
         height = whiteKeyHeight,
+        showTargetDot = note in targetNotes,
         state = state,
         colors = colors,
       )
@@ -107,6 +100,7 @@ fun PianoKeyboardView(
         x = x,
         width = blackKeyWidth,
         height = blackKeyHeight,
+        showTargetDot = note in targetNotes,
         state = state,
         colors = colors,
       )
@@ -122,6 +116,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWhiteKey(
   x: Float,
   width: Float,
   height: Float,
+  showTargetDot: Boolean,
   state: PianoKeyVisualState,
   colors: PianoKeyboardColors,
 ) {
@@ -129,7 +124,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWhiteKey(
     when (state) {
       PianoKeyVisualState.Idle -> colors.whiteKey
       PianoKeyVisualState.Pressed -> lerp(colors.whiteKey, colors.pressedKey, 0.62f)
-      PianoKeyVisualState.Target -> colors.whiteKey
+      PianoKeyVisualState.TargetDot -> colors.whiteKey
+      PianoKeyVisualState.CorrectPressed -> lerp(colors.whiteKey, colors.correctGlow, 0.42f)
       PianoKeyVisualState.WrongPressed -> lerp(colors.whiteKey, colors.wrongGlow, 0.36f)
     }
 
@@ -140,11 +136,17 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWhiteKey(
   )
 
   when (state) {
-    PianoKeyVisualState.Target ->
+    PianoKeyVisualState.CorrectPressed ->
       drawRect(
-        color = colors.targetGlow.copy(alpha = 0.28f),
-        topLeft = Offset(x + 2f, 2f),
-        size = Size(width - 4f, height - 4f),
+        brush =
+          Brush.verticalGradient(
+            colors = listOf(colors.correctGlow.copy(alpha = 0.45f), Color.Transparent),
+            startY = height,
+            endY = height * 0.42f,
+          ),
+        topLeft = Offset(x + 1f, 1f),
+        size = Size(width - 2f, height - 2f),
+        blendMode = BlendMode.SrcOver,
       )
     PianoKeyVisualState.WrongPressed ->
       drawRect(
@@ -153,6 +155,23 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWhiteKey(
         size = Size(width - 4f, height - 4f),
       )
     else -> Unit
+  }
+
+  if (showTargetDot) {
+    drawCircle(
+      color = colors.targetDot,
+      radius = width * 0.10f,
+      center = Offset(x + width * 0.50f, height * 0.83f),
+    )
+  }
+
+  if (state == PianoKeyVisualState.WrongPressed) {
+    drawWrongMark(
+      center = Offset(x + width * 0.50f, height * 0.54f),
+      size = width * 0.15f,
+      color = colors.wrongMark,
+      stroke = 3f,
+    )
   }
 
   drawRect(
@@ -167,6 +186,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBlackKey(
   x: Float,
   width: Float,
   height: Float,
+  showTargetDot: Boolean,
   state: PianoKeyVisualState,
   colors: PianoKeyboardColors,
 ) {
@@ -174,7 +194,8 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBlackKey(
     when (state) {
       PianoKeyVisualState.Idle -> colors.blackKey
       PianoKeyVisualState.Pressed -> lerp(colors.blackKey, colors.pressedKey, 0.72f)
-      PianoKeyVisualState.Target -> colors.blackKey
+      PianoKeyVisualState.TargetDot -> colors.blackKey
+      PianoKeyVisualState.CorrectPressed -> lerp(colors.blackKey, colors.correctGlow, 0.54f)
       PianoKeyVisualState.WrongPressed -> lerp(colors.blackKey, colors.wrongGlow, 0.66f)
     }
 
@@ -186,9 +207,9 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBlackKey(
   )
 
   when (state) {
-    PianoKeyVisualState.Target ->
+    PianoKeyVisualState.CorrectPressed ->
       drawRoundRect(
-        color = colors.targetGlow.copy(alpha = 0.75f),
+        color = colors.correctGlow.copy(alpha = 0.82f),
         topLeft = Offset(x - 1.5f, -1.5f),
         size = Size(width + 3f, height + 3f),
         cornerRadius = CornerRadius(5f, 5f),
@@ -205,11 +226,49 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBlackKey(
     else -> Unit
   }
 
+  if (showTargetDot) {
+    drawCircle(
+      color = colors.targetDot,
+      radius = width * 0.11f,
+      center = Offset(x + width * 0.50f, height * 0.84f),
+    )
+  }
+
+  if (state == PianoKeyVisualState.WrongPressed) {
+    drawWrongMark(
+      center = Offset(x + width * 0.50f, height * 0.47f),
+      size = width * 0.18f,
+      color = colors.wrongMark,
+      stroke = 2.4f,
+    )
+  }
+
   drawRoundRect(
     color = colors.border,
     topLeft = Offset(x, 0f),
     size = Size(width, height),
     cornerRadius = CornerRadius(4f, 4f),
     style = Stroke(width = 1f),
+  )
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWrongMark(
+  center: Offset,
+  size: Float,
+  color: Color,
+  stroke: Float,
+) {
+  val half = size / 2f
+  drawLine(
+    color = color,
+    start = Offset(center.x - half, center.y - half),
+    end = Offset(center.x + half, center.y + half),
+    strokeWidth = stroke,
+  )
+  drawLine(
+    color = color,
+    start = Offset(center.x - half, center.y + half),
+    end = Offset(center.x + half, center.y - half),
+    strokeWidth = stroke,
   )
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.vireal.chordwizard.midi.core.MidiConnectionState
 import com.vireal.chordwizard.midi.core.MidiInputService
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -35,6 +36,7 @@ fun NoteVisualizerScreen(
   midiInputService: MidiInputService,
   onNavigateBack: () -> Unit,
   modifier: Modifier = Modifier,
+  targetSequence: List<Int> = emptyList(),
   targetNotes: Set<Int> = emptySet(),
   visibleRange: IntRange = DEFAULT_NOTE_VISUALIZER_RANGE,
   colors: PianoKeyboardColors = pianoKeyboardColors(),
@@ -42,6 +44,23 @@ fun NoteVisualizerScreen(
   val screenScope = rememberCoroutineScope()
   val pressedKeysFlow = remember(midiInputService) { midiInputService.noteEvents.trackPressedKeys() }
   val pressedKeys by pressedKeysFlow.collectAsState(initial = emptyList())
+  val effectiveTargetSequence =
+    remember(targetSequence, targetNotes) {
+      targetSequence.ifEmpty {
+        targetNotes.toList().sorted()
+      }
+    }
+  val trainingSpec =
+    remember(effectiveTargetSequence) {
+      effectiveTargetSequence
+        .takeIf { it.isNotEmpty() }
+        ?.let { PianoTrainingSpec(targetSequence = it) }
+    }
+  val trainingProgressFlow =
+    remember(midiInputService, trainingSpec) {
+      trainingSpec?.let { midiInputService.noteEvents.trackTrainingProgress(it) } ?: flowOf(PianoTrainingProgress.Empty)
+    }
+  val trainingProgress by trainingProgressFlow.collectAsState(initial = PianoTrainingProgress.Empty)
   val connectionState by midiInputService.connectionState.collectAsState(initial = MidiConnectionState.Disconnected)
   val connectedDeviceName by
     midiInputService.connectionState
@@ -118,7 +137,8 @@ fun NoteVisualizerScreen(
       PianoRollView(
         viewportState = viewportState,
         pressedKeys = pressedKeys,
-        targetNotes = targetNotes,
+        trainingSpec = trainingSpec,
+        trainingProgress = trainingProgress,
         showOctaveShifter = true,
         onViewportAction = { action -> viewportState = reducePianoViewportState(viewportState, action) },
         colors = colors,

@@ -32,6 +32,7 @@ val OnSurfaceVariant = Color(0xFFA0A8B9) // Muted slate gray for secondary text
 // Custom Feedback Colors
 val CorrectNote = Color(0xFF4CAF50) // Success Green - correct pressed keys
 val ErrorNote = Color(0xFFD32F2F) // Error Red - incorrect key highlight
+val TargetNoteDot = Color(0xFF66FF9A) // Bright green marker for target notes
 
 // Piano Keyboard Colors
 val PianoWhiteKey = Color(0xFFFFFFFF) // Pure white keys
