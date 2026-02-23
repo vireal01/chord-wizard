@@ -92,6 +92,7 @@ internal class HomeStoreFactory(
       when (intent) {
         Intent.ToggleContent -> dispatch(Msg.ToggleContent)
         Intent.NavigateToChordLibrary -> publish(Label.NavigateToChordLibrary)
+        Intent.NavigateToChordTrainer -> publish(Label.NavigateToChordTrainer)
         Intent.NavigateToSettings -> publish(Label.NavigateToSettings)
         Intent.NavigateToNoteVisualizer -> publish(Label.NavigateToNoteVisualizer)
       }

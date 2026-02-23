@@ -12,6 +12,8 @@ import com.vireal.chordwizard.feature.pianorollui.NoteVisualizerScreen
 import com.vireal.chordwizard.feature.pianorollui.pianoKeyboardColors
 import com.vireal.chordwizard.ui.screens.chorddetails.ChordDetailsScreen
 import com.vireal.chordwizard.ui.screens.chordlibrary.ChordLibraryScreen
+import com.vireal.chordwizard.ui.screens.chordtrainer.session.ChordTrainerSessionScreen
+import com.vireal.chordwizard.ui.screens.chordtrainer.setup.ChordTrainerSetupScreen
 import com.vireal.chordwizard.ui.screens.home.HomeScreen
 import com.vireal.chordwizard.ui.screens.settings.SettingsScreen
 import com.vireal.chordwizard.ui.theme.CorrectNote
@@ -36,6 +38,9 @@ fun AppNavGraph(
         onNavigateToChordLibrary = {
           navController.navigate(Route.ChordLibrary)
         },
+        onNavigateToChordTrainer = {
+          navController.navigate(Route.ChordTrainerSetup)
+        },
         onNavigateToSettings = {
           navController.navigate(Route.Settings)
         },
@@ -51,6 +56,29 @@ fun AppNavGraph(
         onNavigateToChordDetails = { chordRoot ->
           navController.navigate(Route.ChordDetails(chordRoot.name))
         },
+        onNavigateBack = {
+          navController.popBackStack()
+        },
+      )
+    }
+
+    composable<Route.ChordTrainerSetup> {
+      ChordTrainerSetupScreen(
+        appComponent = appComponent,
+        onNavigateBack = {
+          navController.popBackStack()
+        },
+        onNavigateToSession = { config ->
+          navController.navigate(config.toRoute())
+        },
+      )
+    }
+
+    composable<Route.ChordTrainerSession> { backStackEntry ->
+      val args = backStackEntry.toRoute<Route.ChordTrainerSession>()
+      ChordTrainerSessionScreen(
+        appComponent = appComponent,
+        config = args.toTrainerSessionConfig(),
         onNavigateBack = {
           navController.popBackStack()
         },

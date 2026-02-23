@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.collectLatest
 fun HomeScreen(
   appComponent: AppComponent,
   onNavigateToChordLibrary: () -> Unit,
+  onNavigateToChordTrainer: () -> Unit,
   onNavigateToSettings: () -> Unit,
   onNavigateToNoteVisualizer: () -> Unit,
 ) {
@@ -32,6 +33,7 @@ fun HomeScreen(
     store.labels.collectLatest { label ->
       when (label) {
         HomeStore.Label.NavigateToChordLibrary -> onNavigateToChordLibrary()
+        HomeStore.Label.NavigateToChordTrainer -> onNavigateToChordTrainer()
         HomeStore.Label.NavigateToSettings -> onNavigateToSettings()
         HomeStore.Label.NavigateToNoteVisualizer -> onNavigateToNoteVisualizer()
       }
@@ -89,6 +91,15 @@ fun HomeScreen(
         modifier = Modifier.fillMaxWidth(),
       ) {
         Text("Open Chord Library")
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
+
+      Button(
+        onClick = { store.accept(HomeStore.Intent.NavigateToChordTrainer) },
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Text("Chord Trainer")
       }
 
       Spacer(modifier = Modifier.height(16.dp))

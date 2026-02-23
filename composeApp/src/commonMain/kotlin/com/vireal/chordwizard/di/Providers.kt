@@ -8,6 +8,7 @@ import com.vireal.chordwizard.bluetoothmidi.BluetoothMidiService
 import com.vireal.chordwizard.bluetoothmidi.createBluetoothMidiService
 import com.vireal.chordwizard.midi.core.MidiInputService
 import com.vireal.chordwizard.midi.usb.createUsbMidiInputService
+import com.vireal.chordwizard.ui.screens.chordtrainer.setup.mvi.TrainerSetupMemoryRepository
 import dev.zacsweers.metro.Provides
 
 /**
@@ -25,9 +26,13 @@ interface AppProvides {
 
   @Provides
   fun provideMidiInputService(): MidiInputService = SharedServices.usbMidiInputService
+
+  @Provides
+  fun provideTrainerSetupMemoryRepository(): TrainerSetupMemoryRepository = SharedServices.trainerSetupMemoryRepository
 }
 
 private object SharedServices {
   val bluetoothMidiService: BluetoothMidiService by lazy { createBluetoothMidiService() }
   val usbMidiInputService: MidiInputService by lazy { createUsbMidiInputService() }
+  val trainerSetupMemoryRepository: TrainerSetupMemoryRepository by lazy { TrainerSetupMemoryRepository() }
 }

@@ -4,6 +4,8 @@ import com.vireal.chordwizard.bluetoothmidi.BluetoothMidiService
 import com.vireal.chordwizard.midi.core.MidiInputService
 import com.vireal.chordwizard.ui.screens.chorddetails.mvi.ChordDetailsStoreProvider
 import com.vireal.chordwizard.ui.screens.chordlibrary.mvi.ChordLibraryStoreProvider
+import com.vireal.chordwizard.ui.screens.chordtrainer.session.mvi.ChordTrainerSessionStoreProvider
+import com.vireal.chordwizard.ui.screens.chordtrainer.setup.mvi.ChordTrainerSetupStoreProvider
 import com.vireal.chordwizard.ui.screens.home.mvi.HomeStoreProvider
 import com.vireal.chordwizard.ui.screens.settings.mvi.SettingsStoreProvider
 import dev.zacsweers.metro.DependencyGraph
@@ -48,4 +50,14 @@ abstract class AppComponent : AppProvides {
    * Provides SettingsStoreProvider for MVI
    */
   abstract val settingsStoreProvider: SettingsStoreProvider
+
+  /**
+   * Provides ChordTrainerSetupStoreProvider for MVI
+   */
+  abstract val chordTrainerSetupStoreProvider: ChordTrainerSetupStoreProvider
+
+  /**
+   * Provides ChordTrainerSessionStoreProvider for MVI
+   */
+  abstract val chordTrainerSessionStoreProvider: ChordTrainerSessionStoreProvider
 }

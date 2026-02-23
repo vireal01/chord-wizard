@@ -56,10 +56,16 @@ fun PianoKeyboardView(
   trainingProgress: PianoTrainingProgress? = null,
   modifier: Modifier = Modifier,
   visibleRange: IntRange = 36..96,
+  showTargetDots: Boolean = true,
   colors: PianoKeyboardColors = pianoKeyboardColors(),
 ) {
   val noteStateByMidi = buildNoteStateByMidi(visibleRange, pressedKeys, trainingSpec, trainingProgress)
-  val targetNotes = trainingSpec?.targetSequence?.toSet().orEmpty()
+  val targetNotes =
+    if (showTargetDots) {
+      trainingSpec?.targetSequence?.toSet().orEmpty()
+    } else {
+      emptySet()
+    }
 
   val whiteNotes = visibleRange.filter(::isWhiteKey)
   if (whiteNotes.isEmpty()) return
