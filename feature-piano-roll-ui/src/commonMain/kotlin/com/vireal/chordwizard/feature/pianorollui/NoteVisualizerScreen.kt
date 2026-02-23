@@ -54,7 +54,13 @@ fun NoteVisualizerScreen(
     remember(effectiveTargetSequence) {
       effectiveTargetSequence
         .takeIf { it.isNotEmpty() }
-        ?.let { PianoTrainingSpec(targetSequence = it) }
+        ?.let {
+          PianoTrainingSpec(
+            targetSequence = it,
+            validationMode = PianoValidationMode.StrictSequence,
+            pitchMatchMode = PitchMatchMode.ExactMidi,
+          )
+        }
     }
   val trainingProgressFlow =
     remember(midiInputService, trainingSpec) {

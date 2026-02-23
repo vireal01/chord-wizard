@@ -31,11 +31,19 @@ data class PianoViewportUi(
 
 sealed interface PianoValidationMode {
   data object StrictSequence : PianoValidationMode
+
+  data object ChordSet : PianoValidationMode
+}
+
+enum class PitchMatchMode {
+  ExactMidi,
+  PitchClass,
 }
 
 data class PianoTrainingSpec(
   val targetSequence: List<Int>,
   val validationMode: PianoValidationMode = PianoValidationMode.StrictSequence,
+  val pitchMatchMode: PitchMatchMode = PitchMatchMode.ExactMidi,
 )
 
 data class PianoTrainingProgress(

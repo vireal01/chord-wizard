@@ -51,6 +51,33 @@ class PianoKeyStateMappingTest {
     assertEquals(PianoKeyVisualState.Idle, states[60])
   }
 
+  @Test
+  fun `chord set pitch class marks pressed note in another octave as correct`() {
+    val spec =
+      PianoTrainingSpec(
+        targetSequence = listOf(60, 64, 67),
+        validationMode = PianoValidationMode.ChordSet,
+        pitchMatchMode = PitchMatchMode.PitchClass,
+      )
+    val progress =
+      PianoTrainingProgress(
+        nextExpectedIndex = 1,
+        completedStepIndices = setOf(0),
+        wrongActiveNotes = emptySet(),
+        isCompleted = false,
+      )
+    val states =
+      buildNoteStateByMidi(
+        visibleRange = 60..72,
+        pressedKeys = listOf(pressed(72)),
+        trainingSpec = spec,
+        trainingProgress = progress,
+      )
+
+    assertEquals(PianoKeyVisualState.CorrectPressed, states[72])
+    assertEquals(PianoKeyVisualState.TargetDot, states[60])
+  }
+
   private fun pressed(note: Int): PressedKeyUi =
     PressedKeyUi(
       note = note,

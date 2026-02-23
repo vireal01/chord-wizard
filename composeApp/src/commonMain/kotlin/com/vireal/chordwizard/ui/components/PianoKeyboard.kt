@@ -5,6 +5,8 @@ import androidx.compose.ui.Modifier
 import com.vireal.chordwizard.domain.model.Note
 import com.vireal.chordwizard.domain.model.NoteWithOctave
 import com.vireal.chordwizard.feature.pianorollui.PianoKeyboardView
+import com.vireal.chordwizard.feature.pianorollui.PianoValidationMode
+import com.vireal.chordwizard.feature.pianorollui.PitchMatchMode
 import com.vireal.chordwizard.feature.pianorollui.PianoTrainingProgress
 import com.vireal.chordwizard.feature.pianorollui.PianoTrainingSpec
 import com.vireal.chordwizard.feature.pianorollui.PressedKeyUi
@@ -18,30 +20,21 @@ fun PianoKeyboard(
   modifier: Modifier = Modifier,
   targetSequence: List<Int> = emptyList(),
   trainingProgress: PianoTrainingProgress? = null,
+  validationMode: PianoValidationMode = PianoValidationMode.StrictSequence,
+  pitchMatchMode: PitchMatchMode = PitchMatchMode.ExactMidi,
+  showTargetDots: Boolean = true,
 ) {
   if (pressedNotes.isEmpty() && targetSequence.isEmpty()) return
 
-  val visibleRange =
-    if (pressedNotes.isNotEmpty()) {
-      val startOctave = pressedNotes.minOf { it.octave }
-      val lastNote = pressedNotes.maxBy { it.absolutePosition }
-      val minimumEnd = NoteWithOctave(Note.B, startOctave)
-      val actualEnd =
-        if (lastNote.absolutePosition < minimumEnd.absolutePosition) {
-          minimumEnd
-        } else {
-          lastNote
-        }
-
-      toMidi(NoteWithOctave(Note.C, startOctave))..toMidi(actualEnd)
-    } else {
-      val minTargetMidi = targetSequence.minOrNull() ?: return
-      val maxTargetMidi = targetSequence.maxOrNull() ?: return
-      val startOctave = octaveFromMidi(minTargetMidi)
-      val minimumEndMidi = toMidi(NoteWithOctave(Note.B, startOctave))
-      val actualEndMidi = maxOf(maxTargetMidi, minimumEndMidi)
-      toMidi(NoteWithOctave(Note.C, startOctave))..actualEndMidi
-    }
+  val pressedMidi = pressedNotes.map(::toMidi)
+  val allRelevantMidi = pressedMidi + targetSequence
+  val minRelevantMidi = allRelevantMidi.minOrNull() ?: return
+  val maxRelevantMidi = allRelevantMidi.maxOrNull() ?: return
+  val startOctave = octaveFromMidi(minRelevantMidi)
+  val rangeStartMidi = toMidi(NoteWithOctave(Note.C, startOctave))
+  val minimumEndMidi = toMidi(NoteWithOctave(Note.B, startOctave))
+  val rangeEndMidi = maxOf(maxRelevantMidi, minimumEndMidi)
+  val visibleRange = rangeStartMidi..rangeEndMidi
 
   val pressedKeys =
     pressedNotes.map { note ->
@@ -53,13 +46,21 @@ fun PianoKeyboard(
         startedAt = 0L,
       )
     }
-  val trainingSpec = targetSequence.takeIf { it.isNotEmpty() }?.let(::PianoTrainingSpec)
+  val trainingSpec =
+    targetSequence.takeIf { it.isNotEmpty() }?.let { sequence ->
+      PianoTrainingSpec(
+        targetSequence = sequence,
+        validationMode = validationMode,
+        pitchMatchMode = pitchMatchMode,
+      )
+    }
 
   PianoKeyboardView(
     pressedKeys = pressedKeys,
     trainingSpec = trainingSpec,
     trainingProgress = trainingProgress,
     visibleRange = visibleRange,
+    showTargetDots = showTargetDots,
     colors = pianoKeyboardColors(),
     modifier = modifier,
   )
