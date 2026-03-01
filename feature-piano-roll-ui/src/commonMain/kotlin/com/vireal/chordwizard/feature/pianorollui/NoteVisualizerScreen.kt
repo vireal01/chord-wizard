@@ -26,9 +26,11 @@ import com.vireal.chordwizard.audio.AudioRouteKey
 import com.vireal.chordwizard.audio.MidiAudioBridge
 import com.vireal.chordwizard.midi.core.MidiConnectionState
 import com.vireal.chordwizard.midi.core.MidiInputService
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,8 +92,10 @@ fun NoteVisualizerScreen(
     try {
       awaitCancellation()
     } finally {
-      midiAudioBridge.detach(audioRouteKey)
-      midiInputService.stopScan()
+      withContext(NonCancellable) {
+        midiAudioBridge.detach(audioRouteKey)
+        midiInputService.stopScan()
+      }
     }
   }
 
