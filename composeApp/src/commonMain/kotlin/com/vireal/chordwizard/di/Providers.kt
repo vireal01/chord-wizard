@@ -59,7 +59,7 @@ interface AppProvides {
 private object SharedServices {
   val bluetoothMidiService: BluetoothMidiService by lazy { createBluetoothMidiService() }
   val usbMidiInputService: MidiInputService by lazy { createUsbMidiInputService() }
-  val synthEngine: SynthEngine by lazy { SynthEngineImpl() }
+  val synthEngine: SynthEngine by lazy { SynthEngineImpl(audioOutput = createPlatformAudioOutput()) }
   val samplerEngine: SamplerEngine by lazy { StubSamplerEngine() }
   val instrumentEngine: InstrumentEngineFacade by lazy {
     InstrumentEngineFacade(
