@@ -160,9 +160,9 @@ class SynthEngineImpl(
           sample += voice.nextSample(waveform = waveform, sampleRateHz = config.sampleRateHz, attackSeconds = config.attackSeconds, releaseSeconds = config.releaseSeconds)
         }
 
-        // Normalize by polyphony and apply gentle soft-clipping to avoid harsh digital distortion.
+        // Keep linear summing and only engage limiter near peaks to avoid constant coloration.
         val normalized = sample / sqrt(voiceCount.toFloat())
-        output[index] = softClip(normalized * config.outputGain)
+        output[index] = peakLimit(normalized * config.outputGain, threshold = config.limiterThreshold)
       }
 
       voices.removeAll { it.currentAmplitude <= SILENCE_THRESHOLD }
@@ -203,6 +203,7 @@ class SynthEngineImpl(
     val attackSeconds: Float = 0.005f,
     val releaseSeconds: Float = 0.08f,
     val outputGain: Float = 0.85f,
+    val limiterThreshold: Float = 0.95f,
     val initialMasterVolume: Float = 1f,
   )
 
@@ -265,6 +266,17 @@ class SynthEngineImpl(
 
     fun midiNoteToFrequency(note: Int): Float = (440.0 * 2.0.pow((note - 69) / 12.0)).toFloat()
 
-    fun softClip(x: Float): Float = x / (1f + abs(x))
+    fun peakLimit(
+      x: Float,
+      threshold: Float,
+    ): Float {
+      val safeThreshold = threshold.coerceIn(0.5f, 0.999f)
+      val absX = abs(x)
+      if (absX <= safeThreshold) return x
+
+      val excess = (absX - safeThreshold) / (1f - safeThreshold)
+      val compressed = safeThreshold + (1f - safeThreshold) * (excess / (1f + excess))
+      return compressed.coerceAtMost(1f) * sign(x)
+    }
   }
 }
