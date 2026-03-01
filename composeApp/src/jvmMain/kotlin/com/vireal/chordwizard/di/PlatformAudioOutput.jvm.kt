@@ -1,6 +1,7 @@
 package com.vireal.chordwizard.di
 
 import com.vireal.chordwizard.audio.AudioOutput
+import com.vireal.chordwizard.audio.floatMonoToPcm16Le
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.DataLine
@@ -35,14 +36,7 @@ private class JvmSourceLineAudioOutput : AudioOutput {
     val activeLine = synchronized(lock) { line } ?: return
     if (samples.isEmpty()) return
 
-    val bytes = ByteArray(samples.size * BYTES_PER_SAMPLE)
-    var byteIndex = 0
-
-    samples.forEach { sample ->
-      val pcm16 = (sample.coerceIn(-1f, 1f) * MAX_PCM_AMPLITUDE).toInt().coerceIn(MIN_PCM, MAX_PCM)
-      bytes[byteIndex++] = (pcm16 and BYTE_MASK).toByte()
-      bytes[byteIndex++] = ((pcm16 ushr BYTE_SHIFT) and BYTE_MASK).toByte()
-    }
+    val bytes = floatMonoToPcm16Le(samples)
 
     var offset = 0
     while (offset < bytes.size) {
@@ -68,13 +62,6 @@ private class JvmSourceLineAudioOutput : AudioOutput {
 
     const val BIT_DEPTH = 16
     const val BYTES_PER_SAMPLE = 2
-
-    const val MAX_PCM_AMPLITUDE = 32767f
-    const val MAX_PCM = 32767
-    const val MIN_PCM = -32768
-
-    const val BYTE_MASK = 0xFF
-    const val BYTE_SHIFT = 8
 
     fun calculateRequestedBufferBytes(
       sampleRateHz: Int,
