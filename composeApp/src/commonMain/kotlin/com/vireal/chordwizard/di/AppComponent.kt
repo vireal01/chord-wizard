@@ -1,5 +1,8 @@
 package com.vireal.chordwizard.di
 
+import com.vireal.chordwizard.audio.InstrumentEngine
+import com.vireal.chordwizard.audio.MidiAudioBridge
+import com.vireal.chordwizard.audio.SynthEngine
 import com.vireal.chordwizard.bluetoothmidi.BluetoothMidiService
 import com.vireal.chordwizard.midi.core.MidiInputService
 import com.vireal.chordwizard.ui.screens.chorddetails.mvi.ChordDetailsStoreProvider
@@ -30,6 +33,21 @@ abstract class AppComponent : AppProvides {
    * Provides selected MIDI input service (USB by default).
    */
   abstract val midiInputService: MidiInputService
+
+  /**
+   * Provides currently selected instrument engine.
+   */
+  abstract val instrumentEngine: InstrumentEngine
+
+  /**
+   * Provides synth engine implementation.
+   */
+  abstract val synthEngine: SynthEngine
+
+  /**
+   * Provides MIDI-to-audio bridge for screen-scoped playback.
+   */
+  abstract val midiAudioBridge: MidiAudioBridge
 
   /**
    * Provides HomeStoreProvider for MVI

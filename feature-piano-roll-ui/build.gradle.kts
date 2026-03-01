@@ -33,6 +33,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.coreAudio)
             implementation(projects.midiCore)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
