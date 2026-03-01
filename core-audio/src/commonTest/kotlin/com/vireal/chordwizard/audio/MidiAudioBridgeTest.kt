@@ -12,6 +12,7 @@ import com.vireal.chordwizard.midi.core.MidiPacket
 import com.vireal.chordwizard.midi.core.MidiScanState
 import com.vireal.chordwizard.midi.core.NoteEvent
 import com.vireal.chordwizard.midi.core.NoteEventType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,14 +20,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MidiAudioBridgeTest {
   @Test
   fun `attach on enabled route starts engine and maps note events`() =
-    runBlocking {
+    runTest {
       val midiInput = FakeMidiInputService()
       val engine = FakeInstrumentEngine()
       val bridge =
@@ -40,14 +42,14 @@ class MidiAudioBridgeTest {
       midiInput.emit(NoteEventType.NOTE_ON, note = 60, velocity = 100)
       midiInput.emit(NoteEventType.NOTE_ON, note = 61, velocity = 0)
       midiInput.emit(NoteEventType.NOTE_OFF, note = 60, velocity = 0)
-      delay(50)
+      awaitBridgeWork()
 
       assertEquals(1, engine.startCalls)
       assertEquals(listOf(60), engine.noteOnNotes)
       assertEquals(listOf(61, 60), engine.noteOffNotes)
 
       bridge.detach(AudioRouteKey.NOTE_VISUALIZER)
-      delay(20)
+      awaitBridgeWork()
       assertEquals(1, engine.allNotesOffCalls)
       assertEquals(1, engine.stopCalls)
       bridge.dispose()
@@ -55,7 +57,7 @@ class MidiAudioBridgeTest {
 
   @Test
   fun `attach on disabled route does not start engine`() =
-    runBlocking {
+    runTest {
       val midiInput = FakeMidiInputService()
       val engine = FakeInstrumentEngine()
       val bridge =
@@ -67,12 +69,18 @@ class MidiAudioBridgeTest {
 
       bridge.attach(AudioRouteKey.HOME)
       midiInput.emit(NoteEventType.NOTE_ON, note = 60, velocity = 100)
-      delay(50)
+      awaitBridgeWork()
 
       assertEquals(0, engine.startCalls)
       assertEquals(0, engine.noteOnNotes.size)
       bridge.dispose()
     }
+
+  private suspend fun awaitBridgeWork() {
+    withContext(Dispatchers.Default) {
+      delay(50)
+    }
+  }
 
   private class FakeInstrumentEngine : InstrumentEngine {
     private val _state = MutableStateFlow(InstrumentEngineState(InstrumentEngineState.Status.STOPPED))

@@ -2,14 +2,14 @@ package com.vireal.chordwizard.audio
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class InstrumentEngineFacadeTest {
   @Test
   fun `delegates to synth by default`() =
-    runBlocking {
+    runTest {
       val synth = FakeSynthEngine()
       val sampler = FakeSamplerEngine()
       val facade = InstrumentEngineFacade(synthEngine = synth, samplerEngine = sampler)
@@ -29,7 +29,7 @@ class InstrumentEngineFacadeTest {
 
   @Test
   fun `switches backend and delegates to sampler`() =
-    runBlocking {
+    runTest {
       val synth = FakeSynthEngine()
       val sampler = FakeSamplerEngine()
       val facade = InstrumentEngineFacade(synthEngine = synth, samplerEngine = sampler)
