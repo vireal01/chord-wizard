@@ -6,7 +6,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,15 +58,21 @@ class SynthEngineImpl(
   }
 
   override suspend fun stop() {
-    lifecycleMutex.withLock {
-      val job = renderJob
-      renderJob = null
-      job?.cancelAndJoin()
-
-      voiceMutex.withLock {
-        voices.clear()
+    val jobToStop =
+      lifecycleMutex.withLock {
+        val job = renderJob
+        renderJob = null
+        job
       }
-      audioOutput.stop()
+    jobToStop?.cancelAndJoin()
+
+    voiceMutex.withLock {
+      voices.clear()
+    }
+    audioOutput.stop()
+
+    lifecycleMutex.withLock {
+      // Stop is the terminal state for this lifecycle transition.
       _state.value = InstrumentEngineState(InstrumentEngineState.Status.STOPPED)
     }
   }
@@ -173,6 +178,7 @@ class SynthEngineImpl(
 
   private suspend fun runRenderLoop() {
     val frameDurationMs = ((config.blockSize.toDouble() / config.sampleRateHz) * 1000.0).toLong().coerceAtLeast(1L)
+    val currentJob = currentCoroutineContext()[Job]
     try {
       while (currentCoroutineContext().isActive) {
         val block = renderBlock(config.blockSize)
@@ -184,13 +190,19 @@ class SynthEngineImpl(
     } catch (_: CancellationException) {
       // Expected on stop.
     } catch (t: Throwable) {
-      lifecycleMutex.withLock {
-        if (renderJob == null) return
-        renderJob = null
-        voiceMutex.withLock {
-          voices.clear()
+      val shouldHandleFailure =
+        lifecycleMutex.withLock {
+          if (renderJob !== currentJob) return@withLock false
+          renderJob = null
+          true
         }
-        runCatching { audioOutput.stop() }
+      if (!shouldHandleFailure) return
+
+      voiceMutex.withLock {
+        voices.clear()
+      }
+      runCatching { audioOutput.stop() }
+      lifecycleMutex.withLock {
         _state.value = InstrumentEngineState(InstrumentEngineState.Status.FAILED, t.message ?: "Render loop failed")
       }
     }
