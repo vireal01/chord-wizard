@@ -1,7 +1,11 @@
 package com.vireal.chordwizard.audio
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -75,6 +79,42 @@ class SynthEngineImplTest {
       engine.stop()
     }
 
+  @Test
+  fun `stop waits for in-flight render write cancellation cleanup`() =
+    runTest {
+      val output = BlockingAudioOutput()
+      val engine =
+        SynthEngineImpl(
+          audioOutput = output,
+          config = SynthEngineImpl.SynthEngineConfig(blockSize = 64),
+        )
+
+      engine.start()
+      output.writeStarted.await()
+
+      engine.stop()
+
+      assertTrue(output.writeCleanupCompleted.isCompleted)
+    }
+
+  @Test
+  fun `render failure moves engine state to failed`() =
+    runTest {
+      val engine =
+        SynthEngineImpl(
+          audioOutput = FailingAudioOutput(),
+          config = SynthEngineImpl.SynthEngineConfig(blockSize = 64),
+        )
+
+      engine.start()
+      repeat(50) {
+        if (engine.state.value.status == InstrumentEngineState.Status.FAILED) return@repeat
+        delay(10)
+      }
+
+      assertEquals(InstrumentEngineState.Status.FAILED, engine.state.value.status)
+    }
+
   private class RecordingAudioOutput : AudioOutput {
     val started = MutableStateFlow(false)
 
@@ -87,6 +127,43 @@ class SynthEngineImplTest {
 
     override suspend fun stop() {
       started.value = false
+    }
+  }
+
+  private class BlockingAudioOutput : AudioOutput {
+    val writeStarted = CompletableDeferred<Unit>()
+    val writeCleanupCompleted = CompletableDeferred<Unit>()
+
+    override suspend fun start(sampleRateHz: Int, channels: Int) {
+    }
+
+    override suspend fun writeMonoPcm(samples: FloatArray) {
+      writeStarted.complete(Unit)
+      try {
+        while (true) {
+          delay(10)
+        }
+      } finally {
+        withContext(NonCancellable) {
+          delay(50)
+          writeCleanupCompleted.complete(Unit)
+        }
+      }
+    }
+
+    override suspend fun stop() {
+    }
+  }
+
+  private class FailingAudioOutput : AudioOutput {
+    override suspend fun start(sampleRateHz: Int, channels: Int) {
+    }
+
+    override suspend fun writeMonoPcm(samples: FloatArray) {
+      throw IllegalStateException("synthetic render failure")
+    }
+
+    override suspend fun stop() {
     }
   }
 }

@@ -1,9 +1,11 @@
 package com.vireal.chordwizard.audio
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +18,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sign
+import kotlin.coroutines.coroutineContext
 
 class SynthEngineImpl(
   private val audioOutput: AudioOutput = NoOpAudioOutput(),
@@ -25,6 +28,7 @@ class SynthEngineImpl(
   override val state: StateFlow<InstrumentEngineState> = _state
 
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+  private val lifecycleMutex = Mutex()
   private val voiceMutex = Mutex()
 
   private var waveform: SynthWaveform = SynthWaveform.SINE
@@ -35,32 +39,36 @@ class SynthEngineImpl(
   private val voices = mutableListOf<Voice>()
 
   override suspend fun start() {
-    if (renderJob != null) return
+    lifecycleMutex.withLock {
+      if (renderJob != null) return
 
-    _state.value = InstrumentEngineState(InstrumentEngineState.Status.STARTING)
-    audioOutput.start(sampleRateHz = config.sampleRateHz, channels = 1)
-    _state.value = InstrumentEngineState(InstrumentEngineState.Status.RUNNING)
-
-    renderJob = scope.launch {
-      val frameDurationMs = ((config.blockSize.toDouble() / config.sampleRateHz) * 1000.0).toLong().coerceAtLeast(1L)
-      while (isActive) {
-        val block = renderBlock(config.blockSize)
-        audioOutput.writeMonoPcm(block)
-        delay(frameDurationMs)
+      _state.value = InstrumentEngineState(InstrumentEngineState.Status.STARTING)
+      try {
+        audioOutput.start(sampleRateHz = config.sampleRateHz, channels = 1)
+      } catch (t: Throwable) {
+        _state.value = InstrumentEngineState(InstrumentEngineState.Status.FAILED, t.message ?: "Audio output start failed")
+        return
       }
+
+      val startedJob = scope.launch { runRenderLoop() }
+      renderJob = startedJob
+
+      _state.value = InstrumentEngineState(InstrumentEngineState.Status.RUNNING)
     }
   }
 
   override suspend fun stop() {
-    renderJob?.cancel()
-    renderJob = null
+    lifecycleMutex.withLock {
+      val job = renderJob
+      renderJob = null
+      job?.cancelAndJoin()
 
-    voiceMutex.withLock {
-      voices.clear()
+      voiceMutex.withLock {
+        voices.clear()
+      }
+      audioOutput.stop()
+      _state.value = InstrumentEngineState(InstrumentEngineState.Status.STOPPED)
     }
-
-    audioOutput.stop()
-    _state.value = InstrumentEngineState(InstrumentEngineState.Status.STOPPED)
   }
 
   override suspend fun noteOn(
@@ -157,6 +165,29 @@ class SynthEngineImpl(
     }
 
     return output
+  }
+
+  private suspend fun runRenderLoop() {
+    val frameDurationMs = ((config.blockSize.toDouble() / config.sampleRateHz) * 1000.0).toLong().coerceAtLeast(1L)
+    try {
+      while (coroutineContext.isActive) {
+        val block = renderBlock(config.blockSize)
+        audioOutput.writeMonoPcm(block)
+        delay(frameDurationMs)
+      }
+    } catch (_: CancellationException) {
+      // Expected on stop.
+    } catch (t: Throwable) {
+      lifecycleMutex.withLock {
+        if (renderJob == null) return
+        renderJob = null
+        voiceMutex.withLock {
+          voices.clear()
+        }
+        runCatching { audioOutput.stop() }
+        _state.value = InstrumentEngineState(InstrumentEngineState.Status.FAILED, t.message ?: "Render loop failed")
+      }
+    }
   }
 
   data class SynthEngineConfig(
