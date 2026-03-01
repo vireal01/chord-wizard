@@ -7,6 +7,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sign
-import kotlin.coroutines.coroutineContext
+import kotlin.math.sqrt
 
 class SynthEngineImpl(
   private val audioOutput: AudioOutput = NoOpAudioOutput(),
@@ -150,6 +151,7 @@ class SynthEngineImpl(
 
     voiceMutex.withLock {
       if (voices.isEmpty()) return output
+      val voiceCount = voices.size
 
       repeat(size) { index ->
         var sample = 0f
@@ -158,7 +160,9 @@ class SynthEngineImpl(
           sample += voice.nextSample(waveform = waveform, sampleRateHz = config.sampleRateHz, attackSeconds = config.attackSeconds, releaseSeconds = config.releaseSeconds)
         }
 
-        output[index] = sample.coerceIn(-1f, 1f)
+        // Normalize by polyphony and apply gentle soft-clipping to avoid harsh digital distortion.
+        val normalized = sample / sqrt(voiceCount.toFloat())
+        output[index] = softClip(normalized * config.outputGain)
       }
 
       voices.removeAll { it.currentAmplitude <= SILENCE_THRESHOLD }
@@ -170,10 +174,12 @@ class SynthEngineImpl(
   private suspend fun runRenderLoop() {
     val frameDurationMs = ((config.blockSize.toDouble() / config.sampleRateHz) * 1000.0).toLong().coerceAtLeast(1L)
     try {
-      while (coroutineContext.isActive) {
+      while (currentCoroutineContext().isActive) {
         val block = renderBlock(config.blockSize)
         audioOutput.writeMonoPcm(block)
-        delay(frameDurationMs)
+        if (!audioOutput.blocksOnWrite) {
+          delay(frameDurationMs)
+        }
       }
     } catch (_: CancellationException) {
       // Expected on stop.
@@ -196,6 +202,7 @@ class SynthEngineImpl(
     val maxVoices: Int = 16,
     val attackSeconds: Float = 0.005f,
     val releaseSeconds: Float = 0.08f,
+    val outputGain: Float = 0.85f,
     val initialMasterVolume: Float = 1f,
   )
 
@@ -257,5 +264,7 @@ class SynthEngineImpl(
       }
 
     fun midiNoteToFrequency(note: Int): Float = (440.0 * 2.0.pow((note - 69) / 12.0)).toFloat()
+
+    fun softClip(x: Float): Float = x / (1f + abs(x))
   }
 }

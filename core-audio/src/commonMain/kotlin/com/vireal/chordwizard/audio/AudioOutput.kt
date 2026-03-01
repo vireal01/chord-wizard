@@ -1,6 +1,9 @@
 package com.vireal.chordwizard.audio
 
 interface AudioOutput {
+  val blocksOnWrite: Boolean
+    get() = false
+
   suspend fun start(
     sampleRateHz: Int,
     channels: Int,

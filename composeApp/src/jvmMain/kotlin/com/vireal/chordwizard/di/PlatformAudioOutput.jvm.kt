@@ -12,6 +12,8 @@ private class JvmSourceLineAudioOutput : AudioOutput {
   private val lock = Any()
   private var line: SourceDataLine? = null
 
+  override val blocksOnWrite: Boolean = true
+
   override suspend fun start(
     sampleRateHz: Int,
     channels: Int,
@@ -22,7 +24,8 @@ private class JvmSourceLineAudioOutput : AudioOutput {
       val format = AudioFormat(sampleRateHz.toFloat(), BIT_DEPTH, channels, true, false)
       val info = DataLine.Info(SourceDataLine::class.java, format)
       val sourceLine = AudioSystem.getLine(info) as SourceDataLine
-      sourceLine.open(format)
+      val requestedBufferBytes = calculateRequestedBufferBytes(sampleRateHz = sampleRateHz, channels = channels)
+      sourceLine.open(format, requestedBufferBytes)
       sourceLine.start()
       line = sourceLine
     }
@@ -61,6 +64,8 @@ private class JvmSourceLineAudioOutput : AudioOutput {
   }
 
   private companion object {
+    const val TARGET_OUTPUT_BUFFER_MS = 24
+
     const val BIT_DEPTH = 16
     const val BYTES_PER_SAMPLE = 2
 
@@ -70,5 +75,15 @@ private class JvmSourceLineAudioOutput : AudioOutput {
 
     const val BYTE_MASK = 0xFF
     const val BYTE_SHIFT = 8
+
+    fun calculateRequestedBufferBytes(
+      sampleRateHz: Int,
+      channels: Int,
+    ): Int {
+      val bytesPerFrame = channels * BYTES_PER_SAMPLE
+      val targetFrames = (sampleRateHz * TARGET_OUTPUT_BUFFER_MS) / 1000
+      val minFrames = 256
+      return maxOf(targetFrames, minFrames) * bytesPerFrame
+    }
   }
 }
