@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.withContext
 import javax.sound.midi.MidiMessage
 import javax.sound.midi.MidiSystem
 import javax.sound.midi.Receiver
@@ -41,6 +42,8 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
 
   private val discoveredById = linkedMapOf<String, MidiDevice>()
   private val deviceInfoById = linkedMapOf<String, JvmMidiDevice.Info>()
+  private val deviceSignatureById = linkedMapOf<String, String>()
+  private val nextOrdinalBySignature = linkedMapOf<String, Int>()
 
   private var scanSubscribers = 0
   private var scanJob: Job? = null
@@ -48,6 +51,7 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
   private var currentDevice: JvmMidiDevice? = null
   private var currentTransmitter: Transmitter? = null
   private var currentConnectedRef: MidiDeviceRef? = null
+  private var currentConnectedSignature: String? = null
 
   private val _availability = MutableStateFlow(initialAvailability())
   private val _scanState = MutableStateFlow<MidiScanState>(MidiScanState.Idle)
@@ -187,13 +191,26 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
         return
       }
 
-      val opened = withTimeoutOrNull(config.connectTimeoutMillis) { openDevice(info) }
-      if (opened == null) {
-        val err = MidiError.ConnectionFailed(deviceId, "Connection timed out.")
-        _connectionState.value = MidiConnectionState.Failed(target = target.ref(), error = err)
-        _errors.tryEmit(err)
-        return
-      }
+      val opened =
+        when (val openResult = openDevice(info = info, timeoutMillis = config.connectTimeoutMillis)) {
+          OpenDeviceResult.Timeout -> {
+            val err = MidiError.ConnectionFailed(deviceId, "Connection timed out.")
+            _connectionState.value = MidiConnectionState.Failed(target = target.ref(), error = err)
+            _errors.tryEmit(err)
+            return
+          }
+
+          OpenDeviceResult.Failed -> {
+            _connectionState.value =
+              MidiConnectionState.Failed(
+                target = target.ref(),
+                error = MidiError.ConnectionFailed(deviceId, "Failed to open MIDI input device."),
+              )
+            return
+          }
+
+          is OpenDeviceResult.Opened -> openResult.device
+        }
 
       val transmitter = runCatching { opened.transmitter }.getOrNull()
       if (transmitter == null) {
@@ -218,6 +235,7 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
       currentDevice = opened
       currentTransmitter = transmitter
       currentConnectedRef = target.ref()
+      currentConnectedSignature = info.signature()
       _connectionState.value = MidiConnectionState.Connected(target)
     }
   }
@@ -243,17 +261,34 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
 
   private fun refreshInputDevices() {
     val queried = queryInputDevices()
+    val connectedSignature = currentConnectedSignature
     val connectedId = currentDeviceId
+    val previousIdsBySignature =
+      deviceSignatureById.entries
+        .groupBy(keySelector = { it.value }, valueTransform = { it.key })
+        .mapValues { (_, ids) -> ArrayDeque(ids) }
 
     discoveredById.clear()
     deviceInfoById.clear()
+    deviceSignatureById.clear()
     queried.forEach { entry ->
-      discoveredById[entry.device.id] = entry.device
-      deviceInfoById[entry.device.id] = entry.info
+      val id = previousIdsBySignature[entry.signature]?.removeFirstOrNull() ?: createStableId(entry.signature)
+      discoveredById[id] =
+        MidiDevice(
+          id = id,
+          name = entry.name,
+          transport = MidiTransport.USB,
+          manufacturer = entry.manufacturer,
+          product = entry.product,
+          isConnectable = true,
+          lastSeenEpochMillis = entry.lastSeenEpochMillis,
+        )
+      deviceInfoById[id] = entry.info
+      deviceSignatureById[id] = entry.signature
     }
     _discoveredDevices.value = discoveredById.values.sortedBy { it.name ?: it.id }
 
-    if (connectedId != null && connectedId !in discoveredById) {
+    if (connectedSignature != null && queried.none { it.signature == connectedSignature }) {
       closeCurrentConnection()
       _connectionState.value = MidiConnectionState.Disconnected
       val err =
@@ -279,7 +314,6 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
         .getOrElse { return emptyList() }
 
     val now = System.currentTimeMillis()
-    val seenBySignature = mutableMapOf<String, Int>()
     return infos.mapNotNull { info ->
       val device =
         runCatching { MidiSystem.getMidiDevice(info) }
@@ -290,43 +324,45 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
         return@mapNotNull null
       }
 
-      val signature = info.signature()
-      val index = seenBySignature.getOrDefault(signature, 0) + 1
-      seenBySignature[signature] = index
-      val id = "jvm-midi-${signature.hashCode().toUInt().toString(16)}-$index"
-
       DiscoveredJvmMidiDevice(
         info = info,
-        device =
-          MidiDevice(
-            id = id,
-            name = info.name?.takeUnless { it.isBlank() } ?: info.description,
-            transport = MidiTransport.USB,
-            manufacturer = info.vendor?.takeUnless { it.isBlank() },
-            product = info.description?.takeUnless { it.isBlank() },
-            isConnectable = true,
-            lastSeenEpochMillis = now,
-          ),
+        signature = info.signature(),
+        name = info.name?.takeUnless { it.isBlank() } ?: info.description,
+        manufacturer = info.vendor?.takeUnless { it.isBlank() },
+        product = info.description?.takeUnless { it.isBlank() },
+        lastSeenEpochMillis = now,
       )
     }
   }
 
-  private fun openDevice(info: JvmMidiDevice.Info): JvmMidiDevice? =
-    runCatching {
-      val device = MidiSystem.getMidiDevice(info)
-      if (!device.isOpen) {
-        device.open()
-      }
-      device
-    }.getOrElse { throwable ->
-      _errors.tryEmit(
-        MidiError.ConnectionFailed(
-          deviceId = null,
-          message = throwable.message ?: "Failed to open MIDI input device.",
-        ),
-      )
-      null
+  private suspend fun openDevice(
+    info: JvmMidiDevice.Info,
+    timeoutMillis: Long,
+  ): OpenDeviceResult {
+    if (timeoutMillis <= 0L) {
+      return OpenDeviceResult.Timeout
     }
+
+    return withTimeoutOrNull(timeoutMillis) {
+      withContext(Dispatchers.IO) {
+        runCatching {
+          val device = MidiSystem.getMidiDevice(info)
+          if (!device.isOpen) {
+            device.open()
+          }
+          OpenDeviceResult.Opened(device)
+        }.getOrElse { throwable ->
+          _errors.tryEmit(
+            MidiError.ConnectionFailed(
+              deviceId = null,
+              message = throwable.message ?: "Failed to open MIDI input device.",
+            ),
+          )
+          OpenDeviceResult.Failed
+        }
+      }
+    } ?: OpenDeviceResult.Timeout
+  }
 
   private fun closeCurrentConnection() {
     runCatching { currentTransmitter?.receiver = null }
@@ -336,6 +372,7 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
     currentDevice = null
     currentDeviceId = null
     currentConnectedRef = null
+    currentConnectedSignature = null
   }
 
   private fun initialAvailability(): MidiAvailability {
@@ -355,11 +392,31 @@ actual class PlatformUsbMidiInputService actual constructor() : MidiInputService
 
   private data class DiscoveredJvmMidiDevice(
     val info: JvmMidiDevice.Info,
-    val device: MidiDevice,
+    val signature: String,
+    val name: String?,
+    val manufacturer: String?,
+    val product: String?,
+    val lastSeenEpochMillis: Long,
   )
 
   private companion object {
     const val SCAN_REFRESH_INTERVAL_MILLIS = 1_000L
+  }
+
+  private sealed interface OpenDeviceResult {
+    data object Timeout : OpenDeviceResult
+
+    data object Failed : OpenDeviceResult
+
+    data class Opened(
+      val device: JvmMidiDevice,
+    ) : OpenDeviceResult
+  }
+
+  private fun createStableId(signature: String): String {
+    val next = (nextOrdinalBySignature[signature] ?: 0) + 1
+    nextOrdinalBySignature[signature] = next
+    return "jvm-midi-${signature.hashCode().toUInt().toString(16)}-$next"
   }
 }
 
