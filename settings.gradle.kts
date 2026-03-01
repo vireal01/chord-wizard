@@ -37,3 +37,5 @@ include(":bluetooth-midi")
 include(":midi-core")
 include(":midi-transport-usb")
 include(":feature-piano-roll-ui")
+
+include(":core-audio")

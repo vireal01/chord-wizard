@@ -14,26 +14,30 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.vireal.chordwizard.audio.AudioRouteKey
+import com.vireal.chordwizard.audio.MidiAudioBridge
 import com.vireal.chordwizard.midi.core.MidiConnectionState
 import com.vireal.chordwizard.midi.core.MidiInputService
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteVisualizerScreen(
   midiInputService: MidiInputService,
+  midiAudioBridge: MidiAudioBridge,
+  audioRouteKey: AudioRouteKey,
   onNavigateBack: () -> Unit,
   modifier: Modifier = Modifier,
   targetSequence: List<Int> = emptyList(),
@@ -41,7 +45,6 @@ fun NoteVisualizerScreen(
   visibleRange: IntRange = DEFAULT_NOTE_VISUALIZER_RANGE,
   colors: PianoKeyboardColors = pianoKeyboardColors(),
 ) {
-  val screenScope = rememberCoroutineScope()
   val pressedKeysFlow = remember(midiInputService) { midiInputService.noteEvents.trackPressedKeys() }
   val pressedKeys by pressedKeysFlow.collectAsState(initial = emptyList())
   val effectiveTargetSequence =
@@ -82,9 +85,18 @@ fun NoteVisualizerScreen(
       )
     }
 
-  LaunchedEffect(midiInputService) {
+  LaunchedEffect(midiInputService, midiAudioBridge, audioRouteKey) {
     midiInputService.refreshAvailability()
     midiInputService.startScan()
+    midiAudioBridge.attach(audioRouteKey)
+    try {
+      awaitCancellation()
+    } finally {
+      withContext(NonCancellable) {
+        midiAudioBridge.detach(audioRouteKey)
+        midiInputService.stopScan()
+      }
+    }
   }
 
   LaunchedEffect(midiInputService) {
@@ -94,14 +106,6 @@ fun NoteVisualizerScreen(
         MidiConnectionState.Disconnected -> midiInputService.connect(devices.first().id)
         is MidiConnectionState.Failed -> midiInputService.connect(devices.first().id)
         else -> Unit
-      }
-    }
-  }
-
-  DisposableEffect(midiInputService) {
-    onDispose {
-      screenScope.launch {
-        midiInputService.stopScan()
       }
     }
   }

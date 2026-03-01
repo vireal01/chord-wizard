@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import com.vireal.chordwizard.audio.AudioRouteKey
 import com.vireal.chordwizard.di.AppComponent
 import com.vireal.chordwizard.domain.model.ChordRoot
 import com.vireal.chordwizard.feature.pianorollui.NoteVisualizerScreen
@@ -109,6 +110,8 @@ fun AppNavGraph(
     composable<Route.NoteVisualizer> {
       NoteVisualizerScreen(
         midiInputService = appComponent.midiInputService,
+        midiAudioBridge = appComponent.midiAudioBridge,
+        audioRouteKey = AudioRouteKey.NOTE_VISUALIZER,
         onNavigateBack = {
           navController.popBackStack()
         },
