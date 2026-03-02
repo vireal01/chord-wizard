@@ -84,15 +84,25 @@ fun ChordTrainerSessionScreen(
   }
 
   LaunchedEffect(midiInputService, midiAudioBridge) {
-    midiInputService.refreshAvailability()
-    midiInputService.startScan()
-    midiAudioBridge.attach(AudioRouteKey.CHORD_TRAINER_SESSION)
+    var scanStarted = false
+    var routeAttached = false
     try {
+      midiInputService.refreshAvailability()
+      midiInputService.startScan()
+      scanStarted = true
+
+      midiAudioBridge.attach(AudioRouteKey.CHORD_TRAINER_SESSION)
+      routeAttached = true
+
       awaitCancellation()
     } finally {
       withContext(NonCancellable) {
-        midiAudioBridge.detach(AudioRouteKey.CHORD_TRAINER_SESSION)
-        midiInputService.stopScan()
+        if (routeAttached) {
+          midiAudioBridge.detach(AudioRouteKey.CHORD_TRAINER_SESSION)
+        }
+        if (scanStarted) {
+          midiInputService.stopScan()
+        }
       }
     }
   }
