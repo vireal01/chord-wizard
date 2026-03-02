@@ -31,8 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arkivanov.mvikotlin.extensions.coroutines.labels
 import com.arkivanov.mvikotlin.extensions.coroutines.stateFlow
+import com.vireal.chordwizard.audio.AudioRouteKey
 import com.vireal.chordwizard.di.AppComponent
 import com.vireal.chordwizard.domain.model.NoteWithOctave
 import com.vireal.chordwizard.feature.pianorollui.PianoValidationMode
@@ -42,10 +44,13 @@ import com.vireal.chordwizard.ui.components.PianoKeyboard
 import com.vireal.chordwizard.ui.screens.chordtrainer.model.TrainerSessionConfig
 import com.vireal.chordwizard.ui.screens.chordtrainer.session.mvi.ChordTrainerSessionStore
 import com.vireal.chordwizard.ui.screens.home.mvi.ObserveActiveMidiNotesUseCase
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalCoroutinesApi::class, ExperimentalLayoutApi::class)
 @Composable
@@ -55,8 +60,9 @@ fun ChordTrainerSessionScreen(
   onNavigateBack: () -> Unit,
 ) {
   val store = remember(config) { appComponent.chordTrainerSessionStoreProvider.create(config) }
-  val state by store.stateFlow.collectAsState()
+  val state by store.stateFlow.collectAsStateWithLifecycle()
   val midiInputService = appComponent.midiInputService
+  val midiAudioBridge = appComponent.midiAudioBridge
   val connectionState by midiInputService.connectionState.collectAsState(initial = MidiConnectionState.Disconnected)
   val activeMidiNotes by
     remember(midiInputService) {
@@ -77,9 +83,28 @@ fun ChordTrainerSessionScreen(
     store.accept(ChordTrainerSessionStore.Intent.UpdateMidiNotes(activeMidiNotes))
   }
 
-  LaunchedEffect(midiInputService) {
-    midiInputService.refreshAvailability()
-    midiInputService.startScan()
+  LaunchedEffect(midiInputService, midiAudioBridge) {
+    var scanStarted = false
+    var routeAttached = false
+    try {
+      midiInputService.refreshAvailability()
+      midiInputService.startScan()
+      scanStarted = true
+
+      midiAudioBridge.attach(AudioRouteKey.CHORD_TRAINER_SESSION)
+      routeAttached = true
+
+      awaitCancellation()
+    } finally {
+      withContext(NonCancellable) {
+        if (routeAttached) {
+          midiAudioBridge.detach(AudioRouteKey.CHORD_TRAINER_SESSION)
+        }
+        if (scanStarted) {
+          midiInputService.stopScan()
+        }
+      }
+    }
   }
 
   LaunchedEffect(midiInputService) {

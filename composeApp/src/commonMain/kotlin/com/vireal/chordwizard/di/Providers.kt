@@ -69,7 +69,13 @@ private object SharedServices {
     )
   }
   val audioPlaybackPolicy: AudioPlaybackPolicy by lazy {
-    AudioPlaybackPolicy(enabledRoutes = setOf(AudioRouteKey.NOTE_VISUALIZER))
+    AudioPlaybackPolicy(
+      enabledRoutes =
+        setOf(
+          AudioRouteKey.NOTE_VISUALIZER,
+          AudioRouteKey.CHORD_TRAINER_SESSION,
+        ),
+    )
   }
   val midiAudioBridge: MidiAudioBridge by lazy {
     MidiAudioBridge(
